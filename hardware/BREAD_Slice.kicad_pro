@@ -696,6 +696,22 @@
     [
       "66043bca-a260-4915-9fce-8a51d324c687",
       "Root"
+    ],
+    [
+      "8ccc5ac1-8745-4550-adab-e2f45b961b48",
+      "MAX31855K"
+    ],
+    [
+      "b47faf23-261e-4e47-922b-3d67aaa3d8dc",
+      "MAX31855K1"
+    ],
+    [
+      "bc4e269f-1dfe-4e8a-b0a0-594bd2f17a4d",
+      "Relay"
+    ],
+    [
+      "6b526c5a-a24f-46e9-a481-78bb38a66ba0",
+      "Relay1"
     ]
   ],
   "text_variables": {}
