@@ -2,24 +2,40 @@
 
 Notes on the firmware for relay heater slice.
 
-## Command Structure
+## Commands
 
-| Command | Target | Data Format           | Description                                                                                                                                                                 |
-| ------- | ------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `T`     | `1/2`  | -                     | Request temperature reading from thermocouple 1 or 2.                                                                                                                       |
-| `H`     | `1/2`  | `setpoint,thermo,dir` | Set heater `1` or `2` with a target temperature (`setpoint`), select thermocouple (`thermo` = `1` or `2`), and control direction (`dir` = `0` for direct, `1` for reverse). |
-| `P`     | `1/2`  | `Kp,Ki,Kd`            | Set PID tuning parameters (`Kp`, `Ki`, `Kd`) for heater `1` or `2`.                                                                                                         |
+This system supports several types of serial commands that allow the user to control various aspects of the system, such as mode selection, relay input, heater setpoints, PID tuning, and emergency stop.
 
-### Data Format Details
+### 1. Mode Commands (`M`)
 
-- **`setpoint`**: Target temperature in °C (float).
-- **`thermo`**: Selects thermocouple for PID input (`1` = CH1, `2` = CH2).
-- **`dir`**: Controller direction (`0` = Direct, `1` = Reverse).
-- **`Kp, Ki, Kd`**: PID tuning parameters (float values).
+- **Format**: `M <mode>`
+  - **Example**: `M 0` to switch to CONTROL mode (automatic PID control)
+  - **Example**: `M 1` to switch to WRITE mode (manual control of relay inputs)
 
-### Example Commands
+### 2. Write Relay Input (`W`)
 
-| Command            | Meaning                                                                  |
-| ------------------ | ------------------------------------------------------------------------ |
-| `H,1,100.0,2,0`    | Set heater 1 to **100°C**, using **thermocouple 2**, in **direct mode**. |
-| `P,2,2.5,0.1,0.05` | Set PID for heater 2 with **Kp = 2.5, Ki = 0.1, Kd = 0.05**.             |
+- **Format**: `W <relay> <value>`
+  - **Example**: `W 1 75` to set relay 1 input to 75% (value is clamped between 0 and 100)
+  - **Example**: `W 2 50` to set relay 2 input to 50%
+
+### 3. Heater Setpoint (`H`)
+
+- **Format**: `H <heater> <setpoint>`
+  - **Example**: `H 1 150.5` to set heater 1's temperature setpoint to 150.5°C
+  - **Example**: `H 2 200` to set heater 2's temperature setpoint to 200°C
+
+### 4. PID Tuning (`P`)
+
+- **Format**: `P <heater> <Kp>,<Ki>,<Kd>`
+  - **Example**: `P 1 2.5,0.1,0.01` to update PID values for heater 1 (Kp=2.5, Ki=0.1, Kd=0.01)
+  - **Example**: `P 2 3.0,0.2,0.02` to update PID values for heater 2 (Kp=3.0, Ki=0.2, Kd=0.02)
+
+### 5. Thermo Select (`S`)
+
+- **Format**: `S <relay> <thermo>`
+  - **Example**: `S 1 1` to set relay 1 to read from thermocouple 1
+  - **Example**: `S 2 2` to set relay 2 to read from thermocouple 2
+
+### Invalid Commands
+
+- Any command that does not match the above patterns will result in an error message: `Invalid command!`

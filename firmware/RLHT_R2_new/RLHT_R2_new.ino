@@ -43,7 +43,7 @@ struct RLHT_t
   double Kd_2 = 0;
   double thermo1; // thermocouple 1 measurement
   double thermo2;
-  char thermoSelect[2]; // select which thermocouples pair with relays {relay1, relay2}
+  char thermoSelect[2] = {1, 2}; // select which thermocouples pair with relays {relay1, relay2}
 } RLHT, RLHT_old;
 
 union FLOATUNION_t // Define a float that can be broken up and sent via I2C
@@ -57,11 +57,20 @@ MAX6675 CH1(CLK, CS1, DATA);
 MAX6675 CH2(CLK, CS2, DATA);
 
 // Specify the links and initial tuning parameters
+// PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 PID relay1PID(&(RLHT.relay1Input), &(RLHT.rOnTime_1), &(RLHT.heatSetpoint_1), RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1, DIRECT);
 PID relay2PID(&(RLHT.relay2Input), &(RLHT.rOnTime_2), &(RLHT.heatSetpoint_2), RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2, DIRECT);
 
 unsigned long relay1StartTime;
 unsigned long relay2StartTime;
+
+enum Mode
+{
+  CONTROL,
+  WRITE
+};
+
+Mode currentMode = CONTROL;
 
 void estop()
 {
@@ -141,8 +150,9 @@ void loop()
 
   measureThermocouples();
   serialCommandHandler();
+  printOutput();
 
-  if (!E_STOP)
+  if (!E_STOP && currentMode == CONTROL)
   {
     setPIDTunings();
     // assign thermocouple readings to relay inputs
@@ -175,7 +185,16 @@ void loop()
       relay2PID.Compute();
 
     actuateRelays();
-    printOutput();
+  }
+  else if (currentMode == WRITE)
+  {
+    actuateRelays();
+  }
+  else
+  {
+    digitalWrite(RELAY1, LOW);
+    digitalWrite(RELAY2, LOW);
+    Serial.println(F("ERROR, UNKNOWN STATE!"));
   }
 }
 
@@ -189,37 +208,39 @@ void printOutput()
 {
   if (millis() - lastSerialPrint >= SERIAL_UPDATE_TIME_MS)
   {
-    Serial.print("T1:");
+    Serial.print(F("Mode: "));
+    Serial.print(currentMode == CONTROL ? "CONTROL" : "WRITE");
+    Serial.print(F(", T1:"));
     Serial.print(RLHT.thermo1);
-    Serial.print(", T2:");
+    Serial.print(F(", T2:"));
     Serial.print(RLHT.thermo2);
 
-    Serial.print(", PID1:");
+    Serial.print(F(", PID1:"));
     Serial.print(RLHT.Kp_1);
-    Serial.print(",");
+    Serial.print(F(","));
     Serial.print(RLHT.Ki_1);
-    Serial.print(",");
+    Serial.print(F(","));
     Serial.print(RLHT.Kd_1);
 
-    Serial.print(", Relay1Input:");
+    Serial.print(F(", Relay1Input:"));
     Serial.print(RLHT.relay1Input);
-    Serial.print(", Setpoint1:");
+    Serial.print(F(", Setpoint1:"));
     Serial.print(RLHT.heatSetpoint_1);
-    Serial.print(",onTime1:");
+    Serial.print(F(",onTime1:"));
     Serial.print((int)RLHT.rOnTime_1);
 
-    Serial.print(", PID2:");
+    Serial.print(F(", PID2:"));
     Serial.print(RLHT.Kp_2);
-    Serial.print(",");
+    Serial.print(F(","));
     Serial.print(RLHT.Ki_2);
-    Serial.print(",");
+    Serial.print(F(","));
     Serial.print(RLHT.Kd_2);
 
-    Serial.print(", Relay2Input:");
+    Serial.print(F(", Relay2Input:"));
     Serial.print(RLHT.relay2Input);
-    Serial.print(", Setpoint2:");
+    Serial.print(F(", Setpoint2:"));
     Serial.print(RLHT.heatSetpoint_2);
-    Serial.print(", onTime2:");
+    Serial.print(F(", onTime2:"));
     Serial.println((int)RLHT.rOnTime_2);
 
     lastSerialPrint = millis();
@@ -237,7 +258,60 @@ void serialCommandHandler()
 
     char cmdType = command.charAt(0); // First character determines command type
 
-    if (cmdType == 'H') // Heater Setpoint
+    if (cmdType == 'M') // Mode
+    {
+      int mode = command.charAt(2) - '0'; // 0 = CONTROL, 1 = WRITE
+
+      if (mode == 0)
+      {
+        currentMode = CONTROL;
+        relay1PID.SetMode(AUTOMATIC); // Turn on PID
+        relay2PID.SetMode(AUTOMATIC);
+        Serial.println(F("Switched to CONTROL mode"));
+      }
+      else if (mode == 1)
+      {
+        currentMode = WRITE;
+        relay1PID.SetMode(WRITE); // Turn off PID
+        relay2PID.SetMode(WRITE);
+        Serial.println(F("Switched to WRITE mode"));
+      }
+    }
+    else if (cmdType == 'W') // Write relay input
+    {
+      if (currentMode == WRITE)
+      {
+        int relay = command.charAt(2) - '0';           // 1 or 2
+        double input = command.substring(4).toFloat(); // Extract relay input
+
+        // limit it from 0 to 100
+        input = (input < 0) ? 0 : (input > 100) ? 100
+                                                : input;
+        // cast the input to an integer
+        int newOnTime = (int)input;
+
+        if (relay == 1)
+        {
+          // scale from 0 to 100 to 0 to rPeriod
+          newOnTime = map(newOnTime, 0, 100, 0, RLHT.rPeriod_1);
+          RLHT.rOnTime_1 = newOnTime;
+          Serial.print(F("Relay 1 input updated to: "));
+        }
+        else if (relay == 2)
+        {
+          // scale from 0 to 100 to 0 to rPeriod
+          newOnTime = map(newOnTime, 0, 100, 0, RLHT.rPeriod_2);
+          RLHT.rOnTime_2 = newOnTime;
+          Serial.print(F("Relay 2 input updated to: "));
+        }
+        Serial.println(input);
+      }
+      else
+      {
+        Serial.println(F("ERROR: Not in WRITE mode!"));
+      }
+    }
+    else if (cmdType == 'H') // Heater Setpoint
     {
       int heater = command.charAt(2) - '0';             // Heater number (1 or 2)
       double setpoint = command.substring(4).toFloat(); // Extract temperature setpoint
@@ -245,12 +319,12 @@ void serialCommandHandler()
       if (heater == 1)
       {
         RLHT.heatSetpoint_1 = setpoint;
-        Serial.print("Heater 1 setpoint updated to: ");
+        Serial.print(F("Heater 1 setpoint updated to: "));
       }
       else if (heater == 2)
       {
         RLHT.heatSetpoint_2 = setpoint;
-        Serial.print("Heater 2 setpoint updated to: ");
+        Serial.print(F("Heater 2 setpoint updated to: "));
       }
       Serial.println(setpoint);
     }
@@ -288,20 +362,22 @@ void serialCommandHandler()
       Serial.print(", Kd = ");
       Serial.println(Kd);
     }
-    else if (cmdType == 'E') // Emergency Stop
+    else if (cmdType == 'S') // Thermo select
     {
-      int state = command.charAt(2) - '0'; // 1 = ON, 0 = OFF
+      int relay = command.charAt(2) - '0';
+      char thermo = command.charAt(4);
 
-      if (state == 1)
+      if (relay == 1)
       {
-        estop(); // Trigger emergency stop
-        Serial.println("EMERGENCY STOP ACTIVATED!");
+        RLHT.thermoSelect[0] = thermo;
+        Serial.print("ThermoSelect 1 updated: ");
       }
-      else
+      else if (relay == 2)
       {
-        E_STOP = false;
-        Serial.println("Emergency stop released.");
+        RLHT.thermoSelect[1] = thermo;
+        Serial.print("ThermoSelect 2 updated: ");
       }
+      Serial.println(thermo);
     }
     else
     {
@@ -322,9 +398,9 @@ void measureThermocouples()
 
 void actuateRelays()
 {
-  if (RLHT.heatSetpoint_1 == 0)
+  if (RLHT.heatSetpoint_1 == 0 && currentMode == CONTROL)
     RLHT.rOnTime_1 = 0;
-  if (RLHT.heatSetpoint_2 == 0)
+  if (RLHT.heatSetpoint_2 == 0 && currentMode == CONTROL)
     RLHT.rOnTime_2 = 0;
   // Relay 1
   if (millis() - relay1StartTime > RLHT.rPeriod_1)
