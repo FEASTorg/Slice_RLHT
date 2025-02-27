@@ -1,0 +1,509 @@
+#include <Wire.h>
+#include "max6675.h"
+#include <FastLED.h>
+#include <PID_v1.h>
+
+// internal libs
+#include "hardware_config.h"
+#include "timings.h"
+#include "wire_comms.h"
+
+#define I2C_ADR 10
+
+long lastThermoRead = 0;
+long lastSerialPrint = 0;
+
+bool E_STOP = false;
+
+CRGB led;
+int hue = 0;
+
+RLHT_t RLHT, RLHT_old;
+
+union FLOATUNION_t // Define a float that can be broken up and sent via I2C
+{
+  float number;
+  uint8_t bytes[4];
+};
+
+// initialize the Thermocouples
+MAX6675 thermocouple1(CLK, CS1, DATA);
+MAX6675 thermocouple2(CLK, CS2, DATA);
+
+// Specify the links and initial tuning parameters
+// PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+PID relay1PID(&(RLHT.relay1Input), &(RLHT.rOnTime_1), &(RLHT.heatSetpoint_1), RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1, DIRECT);
+PID relay2PID(&(RLHT.relay2Input), &(RLHT.rOnTime_2), &(RLHT.heatSetpoint_2), RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2, DIRECT);
+
+unsigned long relay1StartTime;
+unsigned long relay2StartTime;
+
+enum Mode
+{
+  CONTROL,
+  WRITE
+};
+
+Mode currentMode = CONTROL;
+
+void estop()
+{
+  if (digitalRead(ESTOP) == HIGH) // when set to HIGH state
+  {
+    led = CRGB::Red;
+    FastLED.show();
+
+    // save states
+    RLHT_old.heatSetpoint_1 = RLHT.heatSetpoint_1;
+    RLHT_old.heatSetpoint_2 = RLHT.heatSetpoint_2;
+    RLHT_old.rOnTime_1 = RLHT.rOnTime_1;
+    RLHT_old.rOnTime_2 = RLHT.rOnTime_2;
+
+    // set critical states to zero and turn off relays
+    RLHT.heatSetpoint_1 = 0;
+    RLHT.heatSetpoint_2 = 0;
+    RLHT.rOnTime_1 = 0;
+    RLHT.rOnTime_2 = 0;
+
+    digitalWrite(RELAY1, LOW);
+    digitalWrite(RELAY2, LOW);
+
+    E_STOP = true;
+    Serial.println("ESTOP PRESSED!");
+  }
+  else // when ESTOP state is LOW
+  {
+    led = CRGB::Black;
+    FastLED.show();
+
+    // reassign old states
+    RLHT_old.heatSetpoint_1 = RLHT_old.heatSetpoint_1;
+    RLHT_old.heatSetpoint_2 = RLHT_old.heatSetpoint_2;
+    RLHT_old.rOnTime_1 = RLHT_old.rOnTime_1;
+    RLHT_old.rOnTime_2 = RLHT_old.rOnTime_2;
+
+    E_STOP = false;
+
+    Serial.println("ESTOP RELEASED!");
+  }
+}
+
+void setup()
+{
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  FastLED.addLeds<NEOPIXEL, LED_PIN>(&led, 1);
+
+  pinMode(ESTOP, INPUT);
+  attachInterrupt(digitalPinToInterrupt(ESTOP), estop, CHANGE);
+
+  pinMode(RELAY1, OUTPUT);
+  pinMode(RELAY2, OUTPUT);
+
+  Wire.begin(I2C_ADR);
+  Wire.onRequest(requestEvent);
+  Wire.onReceive(receiveEvent);
+
+  // tell the PID to range between 0 and the full window size
+  relay1PID.SetOutputLimits(0, RLHT.rPeriod_1);
+  relay2PID.SetOutputLimits(0, RLHT.rPeriod_2);
+
+  // turn the PID on
+  relay1PID.SetMode(AUTOMATIC);
+  relay2PID.SetMode(AUTOMATIC);
+
+  relay1StartTime = millis();
+  relay2StartTime = millis();
+
+  delay(2000);
+}
+
+void loop()
+{
+  // put your main code here, to run repeatedly:
+
+  measureThermocouples();
+  serialCommandHandler();
+  printOutput();
+
+  if (!E_STOP && currentMode == CONTROL)
+  {
+    setPIDTunings();
+    // assign thermocouple readings to relay inputs
+    switch (RLHT.thermoSelect[0])
+    {
+    case 1: // thermocouple 1 to relay 1
+      RLHT.relay1Input = RLHT.thermo1;
+      break;
+    case 2: // thermocouple 2 to relay 1
+      RLHT.relay1Input = RLHT.thermo2;
+      break;
+    }
+    if (isnan(RLHT.relay1Input))
+      RLHT.rOnTime_1 = 0;
+    else
+      relay1PID.Compute();
+
+    switch (RLHT.thermoSelect[1])
+    {
+    case 1: // thermocouple 1 to relay 2
+      RLHT.relay2Input = RLHT.thermo1;
+      break;
+    case 2: // thermocouple 2 to relay 2
+      RLHT.relay2Input = RLHT.thermo2;
+      break;
+    }
+    if (isnan(RLHT.relay2Input))
+      RLHT.rOnTime_2 = 0;
+    else
+      relay2PID.Compute();
+
+    actuateRelays();
+  }
+  else if (currentMode == WRITE)
+  {
+    actuateRelays();
+  }
+  else
+  {
+    digitalWrite(RELAY1, LOW);
+    digitalWrite(RELAY2, LOW);
+    Serial.println(F("ERROR, UNKNOWN STATE!"));
+  }
+}
+
+void setPIDTunings()
+{
+  relay1PID.SetTunings(RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1);
+  relay2PID.SetTunings(RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2);
+}
+
+void printOutput()
+{
+  if (millis() - lastSerialPrint >= SERIAL_UPDATE_TIME_MS)
+  {
+    Serial.print(F("Mode: "));
+    Serial.print(currentMode == CONTROL ? "CONTROL" : "WRITE");
+    Serial.print(F(", T1:"));
+    Serial.print(RLHT.thermo1);
+    Serial.print(F(", T2:"));
+    Serial.print(RLHT.thermo2);
+
+    Serial.print(F(", PID1:"));
+    Serial.print(RLHT.Kp_1);
+    Serial.print(F(","));
+    Serial.print(RLHT.Ki_1);
+    Serial.print(F(","));
+    Serial.print(RLHT.Kd_1);
+
+    Serial.print(F(", Relay1Input:"));
+    Serial.print(RLHT.relay1Input);
+    Serial.print(F(", Setpoint1:"));
+    Serial.print(RLHT.heatSetpoint_1);
+    Serial.print(F(",onTime1:"));
+    Serial.print((int)RLHT.rOnTime_1);
+
+    Serial.print(F(", PID2:"));
+    Serial.print(RLHT.Kp_2);
+    Serial.print(F(","));
+    Serial.print(RLHT.Ki_2);
+    Serial.print(F(","));
+    Serial.print(RLHT.Kd_2);
+
+    Serial.print(F(", Relay2Input:"));
+    Serial.print(RLHT.relay2Input);
+    Serial.print(F(", Setpoint2:"));
+    Serial.print(RLHT.heatSetpoint_2);
+    Serial.print(F(", onTime2:"));
+    Serial.println((int)RLHT.rOnTime_2);
+
+    lastSerialPrint = millis();
+  }
+}
+
+void serialCommandHandler()
+{
+  if (Serial.available())
+  {
+    String command = Serial.readStringUntil('\n'); // Read serial input until newline
+    command.trim();                                // Remove whitespace
+
+    Serial.println("Received command: " + command);
+
+    char cmdType = command.charAt(0); // First character determines command type
+
+    if (cmdType == 'M') // Mode
+    {
+      int mode = command.charAt(2) - '0'; // 0 = CONTROL, 1 = WRITE
+
+      if (mode == 0)
+      {
+        currentMode = CONTROL;
+        relay1PID.SetMode(AUTOMATIC); // Turn on PID
+        relay2PID.SetMode(AUTOMATIC);
+        Serial.println(F("Switched to CONTROL mode"));
+      }
+      else if (mode == 1)
+      {
+        currentMode = WRITE;
+        relay1PID.SetMode(WRITE); // Turn off PID
+        relay2PID.SetMode(WRITE);
+        Serial.println(F("Switched to WRITE mode"));
+      }
+    }
+    else if (cmdType == 'W') // Write relay input
+    {
+      if (currentMode == WRITE)
+      {
+        int relay = command.charAt(2) - '0';           // 1 or 2
+        double input = command.substring(4).toFloat(); // Extract relay input
+
+        // limit it from 0 to 100
+        input = (input < 0) ? 0 : (input > 100) ? 100
+                                                : input;
+        // cast the input to an integer
+        int newOnTime = (int)input;
+
+        if (relay == 1)
+        {
+          // scale from 0 to 100 to 0 to rPeriod
+          newOnTime = map(newOnTime, 0, 100, 0, RLHT.rPeriod_1);
+          RLHT.rOnTime_1 = newOnTime;
+          Serial.print(F("Relay 1 input updated to: "));
+        }
+        else if (relay == 2)
+        {
+          // scale from 0 to 100 to 0 to rPeriod
+          newOnTime = map(newOnTime, 0, 100, 0, RLHT.rPeriod_2);
+          RLHT.rOnTime_2 = newOnTime;
+          Serial.print(F("Relay 2 input updated to: "));
+        }
+        Serial.println(input);
+      }
+      else
+      {
+        Serial.println(F("ERROR: Not in WRITE mode!"));
+      }
+    }
+    else if (cmdType == 'H') // Heater Setpoint
+    {
+      int heater = command.charAt(2) - '0';             // Heater number (1 or 2)
+      double setpoint = command.substring(4).toFloat(); // Extract temperature setpoint
+
+      if (heater == 1)
+      {
+        RLHT.heatSetpoint_1 = setpoint;
+        Serial.print(F("Heater 1 setpoint updated to: "));
+      }
+      else if (heater == 2)
+      {
+        RLHT.heatSetpoint_2 = setpoint;
+        Serial.print(F("Heater 2 setpoint updated to: "));
+      }
+      Serial.println(setpoint);
+    }
+    else if (cmdType == 'P') // PID Tuning
+    {
+      int heater = command.charAt(2) - '0';
+      int firstComma = command.indexOf(',', 4);
+      int secondComma = command.indexOf(',', firstComma + 1);
+      int thirdComma = command.indexOf(',', secondComma + 1);
+
+      double Kp = command.substring(4, firstComma).toFloat();
+      double Ki = command.substring(firstComma + 1, secondComma).toFloat();
+      double Kd = command.substring(secondComma + 1, thirdComma).toFloat();
+
+      if (heater == 1)
+      {
+        RLHT.Kp_1 = Kp;
+        RLHT.Ki_1 = Ki;
+        RLHT.Kd_1 = Kd;
+        relay1PID.SetTunings(Kp, Ki, Kd);
+        Serial.print("PID Heater 1 updated: ");
+      }
+      else if (heater == 2)
+      {
+        RLHT.Kp_2 = Kp;
+        RLHT.Ki_2 = Ki;
+        RLHT.Kd_2 = Kd;
+        relay2PID.SetTunings(Kp, Ki, Kd);
+        Serial.print("PID Heater 2 updated: ");
+      }
+      Serial.print("Kp = ");
+      Serial.print(Kp);
+      Serial.print(", Ki = ");
+      Serial.print(Ki);
+      Serial.print(", Kd = ");
+      Serial.println(Kd);
+    }
+    else if (cmdType == 'S') // Thermo select
+    {
+      int relay = command.charAt(2) - '0';
+      char thermo = command.charAt(4);
+
+      if (relay == 1)
+      {
+        RLHT.thermoSelect[0] = thermo;
+        Serial.print("ThermoSelect 1 updated: ");
+      }
+      else if (relay == 2)
+      {
+        RLHT.thermoSelect[1] = thermo;
+        Serial.print("ThermoSelect 2 updated: ");
+      }
+      Serial.println(thermo);
+    }
+    else
+    {
+      Serial.println("Invalid command!");
+    }
+  }
+}
+
+void measureThermocouples()
+{
+  if (millis() - lastThermoRead >= THERMO_UPDATE_TIME_MS)
+  {
+    RLHT.thermo1 = thermocouple1.readCelsius();
+    RLHT.thermo2 = thermocouple2.readCelsius();
+    lastThermoRead = millis();
+  }
+}
+
+void actuateRelays()
+{
+  if (RLHT.heatSetpoint_1 == 0 && currentMode == CONTROL)
+    RLHT.rOnTime_1 = 0;
+  if (RLHT.heatSetpoint_2 == 0 && currentMode == CONTROL)
+    RLHT.rOnTime_2 = 0;
+  // Relay 1
+  if (millis() - relay1StartTime > RLHT.rPeriod_1)
+  { // time to shift the Relay Window
+    relay1StartTime += RLHT.rPeriod_1;
+  }
+  if ((int)(RLHT.rOnTime_1) > millis() - relay1StartTime)
+    digitalWrite(RELAY1, HIGH);
+  else
+    digitalWrite(RELAY1, LOW);
+
+  // Relay 2
+  if (millis() - relay2StartTime > RLHT.rPeriod_2)
+  { // time to shift the Relay Window
+    relay2StartTime += RLHT.rPeriod_2;
+  }
+  if ((int)(RLHT.rOnTime_2) > millis() - relay2StartTime)
+    digitalWrite(RELAY2, HIGH);
+  else
+    digitalWrite(RELAY2, LOW);
+}
+
+void requestEvent()
+{
+  FLOATUNION_t t1;
+  FLOATUNION_t t2;
+
+  if (isnan(RLHT.thermo1))
+    t1.number = 0;
+  else
+    t1.number = RLHT.thermo1;
+
+  if (isnan(RLHT.thermo2))
+    t2.number = 0;
+  else
+    t2.number = RLHT.thermo2;
+
+  for (int i = 0; i < 4; i++)
+    Wire.write(t1.bytes[i]);
+  for (int i = 0; i < 4; i++)
+    Wire.write(t2.bytes[i]);
+}
+
+/* Command layout
+  Byte 1:     T (want temperature reading)
+              H (change heater setpoint)
+              P (change PID tuning)
+  Byte 2:     1 (first heater/thermocouple)
+              2 (second heater/thermocouple)
+  Byte 3-6:   Kp or heatSetpoint
+  Byte 7-10:  Ki
+  Byte 11-14: Kd
+*/
+
+void receiveEvent(int howMany)
+{
+  byte in_char;
+  char in_data[20];
+
+  led = CRGB::Green;
+  FastLED.show();
+
+  // Serial.println("Receiving: ");
+  int i = 0;
+  while (Wire.available())
+  {
+    in_char = Wire.read();
+    in_data[i] = in_char;
+    Serial.print((byte)in_data[i]);
+    Serial.print(",");
+    i++;
+  }
+  Serial.println();
+
+  setParametersRLHT(in_data);
+
+  led = CRGB::Black;
+  FastLED.show();
+}
+
+/*
+RLHT Command Format:
+  H,1,setpoint,2,0:   temperature setpoint between relay 1 and thermo 2. Enable reverse response = 0 (false)
+  P,Kp,Ki,Kd:       PID tuning
+*/
+
+void setParametersRLHT(char *in_data)
+{
+  FLOATUNION_t float1;
+  FLOATUNION_t float2;
+  FLOATUNION_t float3;
+
+  switch (in_data[0])
+  {
+  case 'H':
+    for (int i = 0; i < 4; i++)
+      float1.bytes[i] = in_data[i + 2];
+    if (in_data[1] == 1)
+    {
+      RLHT.heatSetpoint_1 = float1.number;
+      RLHT.thermoSelect[0] = in_data[6];
+      relay1PID.SetControllerDirection(in_data[7]); // Direct = 0, Reverse = 1
+    }
+    if (in_data[1] == 2)
+    {
+      RLHT.heatSetpoint_2 = float1.number;
+      RLHT.thermoSelect[1] = in_data[6];
+      relay2PID.SetControllerDirection(in_data[7]); // Direct = 0, Reverse = 1
+    }
+    break;
+  case 'P':
+    for (int i = 0; i < 4; i++) // populate variables for PID tuning
+    {
+      float1.bytes[i] = in_data[i + 2];
+      float2.bytes[i] = in_data[i + 6];
+      float3.bytes[i] = in_data[i + 10];
+    }
+    if (in_data[1] == 1)
+    {
+      RLHT.Kp_1 = (double)float1.number;
+      RLHT.Ki_1 = (double)float2.number;
+      RLHT.Kd_1 = (double)float3.number;
+    }
+    if (in_data[1] == 2)
+    {
+      RLHT.Kp_2 = (double)float1.number;
+      RLHT.Ki_2 = (double)float2.number;
+      RLHT.Kd_2 = (double)float3.number;
+    }
+    break;
+  }
+}

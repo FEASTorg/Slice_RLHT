@@ -1,0 +1,7 @@
+#ifndef TIMINGS_H
+#define TIMINGS_H
+
+#define THERMO_UPDATE_TIME_MS 300
+#define SERIAL_UPDATE_TIME_MS 1000
+
+#endif // TIMINGS_H
