@@ -5,101 +5,59 @@
 
 // internal libs
 #include "hardware_config.h"
-#include "timings.h"
+#include "config.h"
 #include "wire_comms.h"
 
-#define I2C_ADR 10
-
+// init timing vars
 long lastThermoRead = 0;
 long lastSerialPrint = 0;
 
+// initialize the relay timing variables
+unsigned long relay1StartTime;
+unsigned long relay2StartTime;
+
+// init var for emergency stop trigger
 bool E_STOP = false;
 
+// create pbject for the LED
 CRGB led;
 int hue = 0;
 
+// create structs for current RLHT and old RLHT
 RLHT_t RLHT, RLHT_old;
 
-union FLOATUNION_t // Define a float that can be broken up and sent via I2C
-{
-  float number;
-  uint8_t bytes[4];
-};
-
 // initialize the Thermocouples
-MAX6675 thermocouple1(CLK, CS1, DATA);
-MAX6675 thermocouple2(CLK, CS2, DATA);
+MAX6675 thermocouple1(TC_CLK, TC_CS1, TC_DATA);
+MAX6675 thermocouple2(TC_CLK, TC_CS2, TC_DATA);
 
 // Specify the links and initial tuning parameters
 // PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 PID relay1PID(&(RLHT.relay1Input), &(RLHT.rOnTime_1), &(RLHT.heatSetpoint_1), RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1, DIRECT);
 PID relay2PID(&(RLHT.relay2Input), &(RLHT.rOnTime_2), &(RLHT.heatSetpoint_2), RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2, DIRECT);
 
-unsigned long relay1StartTime;
-unsigned long relay2StartTime;
-
 enum Mode
 {
   CONTROL,
   WRITE
-};
-
-Mode currentMode = CONTROL;
-
-void estop()
-{
-  if (digitalRead(ESTOP) == HIGH) // when set to HIGH state
-  {
-    led = CRGB::Red;
-    FastLED.show();
-
-    // save states
-    RLHT_old.heatSetpoint_1 = RLHT.heatSetpoint_1;
-    RLHT_old.heatSetpoint_2 = RLHT.heatSetpoint_2;
-    RLHT_old.rOnTime_1 = RLHT.rOnTime_1;
-    RLHT_old.rOnTime_2 = RLHT.rOnTime_2;
-
-    // set critical states to zero and turn off relays
-    RLHT.heatSetpoint_1 = 0;
-    RLHT.heatSetpoint_2 = 0;
-    RLHT.rOnTime_1 = 0;
-    RLHT.rOnTime_2 = 0;
-
-    digitalWrite(RELAY1, LOW);
-    digitalWrite(RELAY2, LOW);
-
-    E_STOP = true;
-    Serial.println("ESTOP PRESSED!");
-  }
-  else // when ESTOP state is LOW
-  {
-    led = CRGB::Black;
-    FastLED.show();
-
-    // reassign old states
-    RLHT_old.heatSetpoint_1 = RLHT_old.heatSetpoint_1;
-    RLHT_old.heatSetpoint_2 = RLHT_old.heatSetpoint_2;
-    RLHT_old.rOnTime_1 = RLHT_old.rOnTime_1;
-    RLHT_old.rOnTime_2 = RLHT_old.rOnTime_2;
-
-    E_STOP = false;
-
-    Serial.println("ESTOP RELEASED!");
-  }
-}
+} currentMode = CONTROL;
 
 void setup()
 {
-  // put your setup code here, to run once:
+  // initialize serial communication
   Serial.begin(115200);
+
+  // initialize the LED
   FastLED.addLeds<NEOPIXEL, LED_PIN>(&led, 1);
 
+  // initialize the estop
   pinMode(ESTOP, INPUT);
   attachInterrupt(digitalPinToInterrupt(ESTOP), estop, CHANGE);
 
+  // initialize the relay pins
   pinMode(RELAY1, OUTPUT);
   pinMode(RELAY2, OUTPUT);
 
+  // initialize the I2C communication
   Wire.begin(I2C_ADR);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
@@ -112,19 +70,25 @@ void setup()
   relay1PID.SetMode(AUTOMATIC);
   relay2PID.SetMode(AUTOMATIC);
 
+  // initialize the relay start times
   relay1StartTime = millis();
   relay2StartTime = millis();
 
-  delay(2000);
+  // small delay before entering loop
+  delay(1000);
 }
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
 
+  // read the thermocouples
   measureThermocouples();
+
+  // handle serial commands
   serialCommandHandler();
-  printOutput();
+
+  // print output to serial
+  printSerialOutput();
 
   if (!E_STOP && currentMode == CONTROL)
   {
@@ -160,7 +124,7 @@ void loop()
 
     actuateRelays();
   }
-  else if (currentMode == WRITE)
+  else if (!E_STOP && currentMode == WRITE)
   {
     actuateRelays();
   }
@@ -172,13 +136,51 @@ void loop()
   }
 }
 
-void setPIDTunings()
+void estop()
 {
-  relay1PID.SetTunings(RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1);
-  relay2PID.SetTunings(RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2);
+  if (digitalRead(ESTOP) == HIGH) // when set to HIGH state
+  {
+    led = CRGB::Red;
+    FastLED.show();
+
+    // save states
+    RLHT_old.heatSetpoint_1 = RLHT.heatSetpoint_1;
+    RLHT_old.heatSetpoint_2 = RLHT.heatSetpoint_2;
+    RLHT_old.rOnTime_1 = RLHT.rOnTime_1;
+    RLHT_old.rOnTime_2 = RLHT.rOnTime_2;
+
+    // set critical states to zero and turn off relays
+    RLHT.heatSetpoint_1 = 0;
+    RLHT.heatSetpoint_2 = 0;
+    RLHT.rOnTime_1 = 0;
+    RLHT.rOnTime_2 = 0;
+
+    // turn off relays
+    digitalWrite(RELAY1, LOW);
+    digitalWrite(RELAY2, LOW);
+
+    // set the ESTOP flag
+    E_STOP = true;
+    Serial.println("ESTOP PRESSED!");
+  }
+  else // when ESTOP state is LOW i.e. normal operation
+  {
+    led = CRGB::Black;
+    FastLED.show();
+
+    // reassign old states
+    RLHT_old.heatSetpoint_1 = RLHT_old.heatSetpoint_1;
+    RLHT_old.heatSetpoint_2 = RLHT_old.heatSetpoint_2;
+    RLHT_old.rOnTime_1 = RLHT_old.rOnTime_1;
+    RLHT_old.rOnTime_2 = RLHT_old.rOnTime_2;
+
+    // clear the ESTOP flag
+    E_STOP = false;
+    Serial.println("ESTOP RELEASED!");
+  }
 }
 
-void printOutput()
+void printSerialOutput()
 {
   if (millis() - lastSerialPrint >= SERIAL_UPDATE_TIME_MS)
   {
@@ -432,7 +434,7 @@ void requestEvent()
 void receiveEvent(int howMany)
 {
   byte in_char;
-  char in_data[20];
+  char in_TC_DATA[20];
 
   led = CRGB::Green;
   FastLED.show();
@@ -442,17 +444,23 @@ void receiveEvent(int howMany)
   while (Wire.available())
   {
     in_char = Wire.read();
-    in_data[i] = in_char;
-    Serial.print((byte)in_data[i]);
+    in_TC_DATA[i] = in_char;
+    Serial.print((byte)in_TC_DATA[i]);
     Serial.print(",");
     i++;
   }
   Serial.println();
 
-  setParametersRLHT(in_data);
+  setParametersRLHT(in_TC_DATA);
 
   led = CRGB::Black;
   FastLED.show();
+}
+
+void setPIDTunings()
+{
+  relay1PID.SetTunings(RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1);
+  relay2PID.SetTunings(RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2);
 }
 
 /*
@@ -460,45 +468,44 @@ RLHT Command Format:
   H,1,setpoint,2,0:   temperature setpoint between relay 1 and thermo 2. Enable reverse response = 0 (false)
   P,Kp,Ki,Kd:       PID tuning
 */
-
-void setParametersRLHT(char *in_data)
+void setParametersRLHT(char *in_TC_DATA)
 {
   FLOATUNION_t float1;
   FLOATUNION_t float2;
   FLOATUNION_t float3;
 
-  switch (in_data[0])
+  switch (in_TC_DATA[0])
   {
   case 'H':
     for (int i = 0; i < 4; i++)
-      float1.bytes[i] = in_data[i + 2];
-    if (in_data[1] == 1)
+      float1.bytes[i] = in_TC_DATA[i + 2];
+    if (in_TC_DATA[1] == 1)
     {
       RLHT.heatSetpoint_1 = float1.number;
-      RLHT.thermoSelect[0] = in_data[6];
-      relay1PID.SetControllerDirection(in_data[7]); // Direct = 0, Reverse = 1
+      RLHT.thermoSelect[0] = in_TC_DATA[6];
+      relay1PID.SetControllerDirection(in_TC_DATA[7]); // Direct = 0, Reverse = 1
     }
-    if (in_data[1] == 2)
+    if (in_TC_DATA[1] == 2)
     {
       RLHT.heatSetpoint_2 = float1.number;
-      RLHT.thermoSelect[1] = in_data[6];
-      relay2PID.SetControllerDirection(in_data[7]); // Direct = 0, Reverse = 1
+      RLHT.thermoSelect[1] = in_TC_DATA[6];
+      relay2PID.SetControllerDirection(in_TC_DATA[7]); // Direct = 0, Reverse = 1
     }
     break;
   case 'P':
     for (int i = 0; i < 4; i++) // populate variables for PID tuning
     {
-      float1.bytes[i] = in_data[i + 2];
-      float2.bytes[i] = in_data[i + 6];
-      float3.bytes[i] = in_data[i + 10];
+      float1.bytes[i] = in_TC_DATA[i + 2];
+      float2.bytes[i] = in_TC_DATA[i + 6];
+      float3.bytes[i] = in_TC_DATA[i + 10];
     }
-    if (in_data[1] == 1)
+    if (in_TC_DATA[1] == 1)
     {
       RLHT.Kp_1 = (double)float1.number;
       RLHT.Ki_1 = (double)float2.number;
       RLHT.Kd_1 = (double)float3.number;
     }
-    if (in_data[1] == 2)
+    if (in_TC_DATA[1] == 2)
     {
       RLHT.Kp_2 = (double)float1.number;
       RLHT.Ki_2 = (double)float2.number;

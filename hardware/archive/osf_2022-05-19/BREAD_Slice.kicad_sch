@@ -40,7 +40,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf"
+			(property "TC_DATAsheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf"
 				(at 0 0 0)
 				(effects
 					(font
@@ -217,7 +217,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.digikey.com/short/qcd8n7"
+			(property "TC_DATAsheet" "https://www.digikey.com/short/qcd8n7"
 				(at 0 5.08 0)
 				(effects
 					(font
@@ -382,7 +382,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -876,7 +876,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1012,7 +1012,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -1149,7 +1149,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1320,7 +1320,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1450,7 +1450,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -1667,7 +1667,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf"
+			(property "TC_DATAsheet" "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf"
 				(at 0 0 0)
 				(effects
 					(font
@@ -2291,7 +2291,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -2373,7 +2373,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+			(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 				(at 21.59 1.27 0)
 				(effects
 					(font
@@ -2548,7 +2548,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.digikey.com/short/q7wbwz"
+			(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbwz"
 				(at 0 -6.35 0)
 				(effects
 					(font
@@ -2689,7 +2689,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.digikey.com/short/qt5j3q"
+			(property "TC_DATAsheet" "https://www.digikey.com/short/qt5j3q"
 				(at 0 -5.08 0)
 				(effects
 					(font
@@ -2848,7 +2848,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.digikey.com/short/q75wjm"
+			(property "TC_DATAsheet" "https://www.digikey.com/short/q75wjm"
 				(at 0 3.81 0)
 				(effects
 					(font
@@ -3000,7 +3000,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.digikey.com/short/q75wqm"
+			(property "TC_DATAsheet" "https://www.digikey.com/short/q75wqm"
 				(at 0 3.81 0)
 				(effects
 					(font
@@ -3151,7 +3151,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
+			(property "TC_DATAsheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3486,7 +3486,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.onsemi.com/pub/Collateral/TIP120-D.PDF"
+			(property "TC_DATAsheet" "https://www.onsemi.com/pub/Collateral/TIP120-D.PDF"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3934,7 +3934,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -4054,7 +4054,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -4174,7 +4174,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -5888,7 +5888,7 @@
 		)
 		(uuid "04165f86-186a-4a4c-bfd3-013fe1a4c358")
 	)
-	(label "CLK"
+	(label "TC_CLK"
 		(at 237.49 26.67 90)
 		(effects
 			(font
@@ -5908,7 +5908,7 @@
 		)
 		(uuid "0b00bfbf-34bb-4717-bbea-203e6f2421d8")
 	)
-	(label "I2C_CLK"
+	(label "I2C_TC_CLK"
 		(at 19.05 31.75 0)
 		(effects
 			(font
@@ -5948,7 +5948,7 @@
 		)
 		(uuid "21ae9c3a-7138-444e-be38-56a4842ab594")
 	)
-	(label "CLK"
+	(label "TC_CLK"
 		(at 29.21 106.68 180)
 		(effects
 			(font
@@ -5978,7 +5978,7 @@
 		)
 		(uuid "27d56953-c620-4d5b-9c1c-e48bc3d9684a")
 	)
-	(label "DATA"
+	(label "TC_DATA"
 		(at 240.03 68.58 270)
 		(effects
 			(font
@@ -5988,7 +5988,7 @@
 		)
 		(uuid "2846428d-39de-4eae-8ce2-64955d56c493")
 	)
-	(label "DATA"
+	(label "TC_DATA"
 		(at 241.3 128.27 270)
 		(effects
 			(font
@@ -6098,7 +6098,7 @@
 		)
 		(uuid "84d2c5d6-fc6b-4785-954a-c2f3ffa39d28")
 	)
-	(label "CLK"
+	(label "TC_CLK"
 		(at 238.76 86.36 90)
 		(effects
 			(font
@@ -6118,7 +6118,7 @@
 		)
 		(uuid "9cb12cc8-7f1a-4a01-9256-c119f11a8a02")
 	)
-	(label "DATA"
+	(label "TC_DATA"
 		(at 29.21 104.14 180)
 		(effects
 			(font
@@ -6188,7 +6188,7 @@
 		)
 		(uuid "c87f1ce2-d6a6-46c8-b793-03713a8827cd")
 	)
-	(label "I2C_CLK"
+	(label "I2C_TC_CLK"
 		(at 66.04 101.6 180)
 		(effects
 			(font
@@ -6253,7 +6253,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 45.72 116.84 0)
 			(effects
 				(font
@@ -6318,7 +6318,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 49.53 60.96 0)
 			(effects
 				(font
@@ -6383,7 +6383,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 41.91 60.96 0)
 			(effects
 				(font
@@ -6449,7 +6449,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/qcd8n7"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/qcd8n7"
 			(at 40.64 29.21 0)
 			(effects
 				(font
@@ -6535,7 +6535,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 40.64 39.37 0)
 			(effects
 				(font
@@ -6601,7 +6601,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 27.94 124.46 0)
 			(effects
 				(font
@@ -6664,7 +6664,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 46.99 124.46 0)
 			(effects
 				(font
@@ -6727,7 +6727,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 27.94 129.54 0)
 			(effects
 				(font
@@ -6790,7 +6790,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 46.99 129.54 0)
 			(effects
 				(font
@@ -6852,7 +6852,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf"
+		(property "TC_DATAsheet" "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf"
 			(at 44.45 88.9 0)
 			(effects
 				(font
@@ -7005,7 +7005,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 278.13 173.99 0)
 			(effects
 				(font
@@ -7069,7 +7069,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 35.56 36.83 0)
 			(effects
 				(font
@@ -7161,7 +7161,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 27.94 25.4 0)
 			(effects
 				(font
@@ -7226,7 +7226,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 29.21 50.8 0)
 			(effects
 				(font
@@ -7291,7 +7291,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 40.64 29.21 0)
 			(effects
 				(font
@@ -7357,7 +7357,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/qcd8n7"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/qcd8n7"
 			(at 53.34 29.21 0)
 			(effects
 				(font
@@ -7443,7 +7443,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 53.34 39.37 0)
 			(effects
 				(font
@@ -7508,7 +7508,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 53.34 29.21 0)
 			(effects
 				(font
@@ -7576,7 +7576,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/TIP120-D.PDF"
+		(property "TC_DATAsheet" "https://www.onsemi.com/pub/Collateral/TIP120-D.PDF"
 			(at 99.06 92.71 0)
 			(effects
 				(font
@@ -7648,7 +7648,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 101.6 104.14 0)
 			(effects
 				(font
@@ -7712,7 +7712,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 185.42 41.91 0)
 			(effects
 				(font
@@ -7779,7 +7779,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 185.42 54.61 0)
 			(effects
 				(font
@@ -7848,7 +7848,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 191.77 49.53 0)
 			(effects
 				(font
@@ -7916,7 +7916,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 222.25 68.58 0)
 			(effects
 				(font
@@ -7982,7 +7982,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 114.3 151.13 0)
 			(effects
 				(font
@@ -8050,7 +8050,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 114.3 167.64 0)
 			(effects
 				(font
@@ -8115,7 +8115,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 114.3 144.78 0)
 			(effects
 				(font
@@ -8180,7 +8180,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 44.45 185.42 0)
 			(effects
 				(font
@@ -8245,7 +8245,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 149.86 48.26 0)
 			(effects
 				(font
@@ -8331,7 +8331,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 245.11 67.31 0)
 			(effects
 				(font
@@ -8396,7 +8396,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 77.47 173.99 0)
 			(effects
 				(font
@@ -8463,7 +8463,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q75wjm"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q75wjm"
 			(at 81.28 166.37 0)
 			(effects
 				(font
@@ -8549,7 +8549,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/qt5j3q"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/qt5j3q"
 			(at 146.05 179.07 0)
 			(effects
 				(font
@@ -8637,7 +8637,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 186.69 116.84 0)
 			(effects
 				(font
@@ -8705,7 +8705,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 35.56 168.91 0)
 			(effects
 				(font
@@ -8770,7 +8770,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 53.34 166.37 0)
 			(effects
 				(font
@@ -8835,7 +8835,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 5.08 162.56 0)
 			(effects
 				(font
@@ -8921,7 +8921,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 133.35 72.39 0)
 			(effects
 				(font
@@ -8989,7 +8989,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
+		(property "TC_DATAsheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
 			(at 111.76 63.5 0)
 			(effects
 				(font
@@ -9070,7 +9070,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 233.68 107.95 0)
 			(effects
 				(font
@@ -9158,7 +9158,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 35.56 152.4 0)
 			(effects
 				(font
@@ -9228,7 +9228,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 162.56 60.96 0)
 			(effects
 				(font
@@ -9314,7 +9314,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 223.52 128.27 0)
 			(effects
 				(font
@@ -9380,7 +9380,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 123.19 177.8 0)
 			(effects
 				(font
@@ -9450,7 +9450,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 132.08 80.01 0)
 			(effects
 				(font
@@ -9536,7 +9536,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf"
+		(property "TC_DATAsheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf"
 			(at 134.62 157.48 0)
 			(effects
 				(font
@@ -9613,7 +9613,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 157.48 173.99 0)
 			(effects
 				(font
@@ -9680,7 +9680,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbwz"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbwz"
 			(at 107.95 45.72 0)
 			(effects
 				(font
@@ -9767,7 +9767,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 44.45 179.07 0)
 			(effects
 				(font
@@ -9836,7 +9836,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 88.9 92.71 0)
 			(effects
 				(font
@@ -9904,7 +9904,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 246.38 127 0)
 			(effects
 				(font
@@ -9969,7 +9969,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 101.6 35.56 0)
 			(effects
 				(font
@@ -10034,7 +10034,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 83.82 161.29 0)
 			(effects
 				(font
@@ -10120,7 +10120,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 132.08 149.86 0)
 			(effects
 				(font
@@ -10187,7 +10187,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 162.56 68.58 0)
 			(effects
 				(font
@@ -10273,7 +10273,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 123.19 184.15 0)
 			(effects
 				(font
@@ -10337,7 +10337,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 186.69 104.14 0)
 			(effects
 				(font
@@ -10405,7 +10405,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/qt5j3q"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/qt5j3q"
 			(at 67.31 180.34 0)
 			(effects
 				(font
@@ -10494,7 +10494,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbhd"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbhd"
 			(at 151.13 110.49 0)
 			(effects
 				(font
@@ -10581,7 +10581,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 193.04 111.76 0)
 			(effects
 				(font
@@ -10651,7 +10651,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q75wqm"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q75wqm"
 			(at 95.25 63.5 0)
 			(effects
 				(font
@@ -10740,7 +10740,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 232.41 48.26 0)
 			(effects
 				(font
@@ -10827,7 +10827,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 35.56 146.05 0)
 			(effects
 				(font
@@ -10892,7 +10892,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 132.08 165.1 0)
 			(effects
 				(font
@@ -10957,7 +10957,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 53.34 151.13 0)
 			(effects
 				(font
@@ -11022,7 +11022,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf"
+		(property "TC_DATAsheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf"
 			(at 55.88 158.75 0)
 			(effects
 				(font
@@ -11101,7 +11101,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q75wjm"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q75wjm"
 			(at 161.29 165.1 0)
 			(effects
 				(font

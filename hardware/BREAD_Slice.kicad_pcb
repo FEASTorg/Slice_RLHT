@@ -120,7 +120,7 @@
 	(net 4 "unconnected-(A1-~{RESET}-Pad3)")
 	(net 5 "+5V")
 	(net 6 "/LED")
-	(net 7 "/I2C_CLK")
+	(net 7 "/I2C_TC_CLK")
 	(net 8 "unconnected-(A1-D8-Pad11)")
 	(net 9 "/I2C_DAT")
 	(net 10 "unconnected-(A1-D9-Pad12)")
@@ -133,8 +133,8 @@
 	(net 17 "unconnected-(A1-~{RESET}-Pad28)")
 	(net 18 "+12V")
 	(net 19 "/INT")
-	(net 20 "/DATA")
-	(net 21 "/CLK")
+	(net 20 "/TC_DATA")
+	(net 21 "/TC_CLK")
 	(net 22 "/SS1")
 	(net 23 "/SS2")
 	(net 24 "/Relay1")
@@ -212,7 +212,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -327,7 +327,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -442,7 +442,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -557,7 +557,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -671,7 +671,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf"
+		(property "TC_DATAsheet" "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -1184,7 +1184,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 20 "/DATA")
+			(net 20 "/TC_DATA")
 			(pinfunction "D11")
 			(pintype "bidirectional")
 			(uuid "45e210f7-16e3-43a9-934a-c1f0f7113e4c")
@@ -1206,7 +1206,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 21 "/CLK")
+			(net 21 "/TC_CLK")
 			(pinfunction "D13")
 			(pintype "bidirectional")
 			(uuid "d6ac1d99-abf5-4815-a713-f4a7d8675cd4")
@@ -1294,7 +1294,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 7 "/I2C_CLK")
+			(net 7 "/I2C_TC_CLK")
 			(pinfunction "A5")
 			(pintype "bidirectional")
 			(uuid "3dd37439-e4c3-42c0-861d-94a7221c53a1")
@@ -1418,7 +1418,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2438,7 +2438,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 7 "/I2C_CLK")
+			(net 7 "/I2C_TC_CLK")
 			(pinfunction "Pin_3")
 			(pintype "passive")
 			(uuid "d9a36426-2e97-4a6b-b5ae-e2df78411fde")
@@ -2575,7 +2575,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2741,7 +2741,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5400,7 +5400,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5759,7 +5759,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5866,7 +5866,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6252,7 +6252,7 @@
 		(layer "F.Cu")
 		(uuid "63add86c-a8e0-49cf-9ede-35a45607638f")
 		(at 147.3 72.9)
-		(descr "Fuseholder Clips, 5x20mm Cylinder Fuse, Pins Lateral, Horizontal, Bel FC-203-22, https://www.belfuse.com/resources/datasheets/circuitprotection/ds-cp-0672-fuse-clips-series.pdf")
+		(descr "Fuseholder Clips, 5x20mm Cylinder Fuse, Pins Lateral, Horizontal, Bel FC-203-22, https://www.belfuse.com/resources/TC_DATAsheets/circuitprotection/ds-cp-0672-fuse-clips-series.pdf")
 		(tags "fuse clip open")
 		(property "Reference" "F2"
 			(at 9.3 -2.45 0)
@@ -6289,7 +6289,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbwz"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbwz"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6731,7 +6731,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
+		(property "TC_DATAsheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7141,7 +7141,7 @@
 		(layer "F.Cu")
 		(uuid "746fd04f-2e9e-467f-8afd-7b5eb87bd89d")
 		(at 173.3 136.132769)
-		(descr "<h3>WS2812B</h3>\n\n<p>Specifications:\n<ul><li>Pin count: 4</li>\n<li>Size: 5.0 x 5.0 mm</li>\n</ul></p>\n<p><b>Datasheet referenced for footprint:</b> <a href=\"http://cdn.sparkfun.com/datasheets/BreakoutBoards/WS2812B.pdf\">WS2812B</a></p>\n<p>Example device:\n<ul><li>WS2812B</li>")
+		(descr "<h3>WS2812B</h3>\n\n<p>Specifications:\n<ul><li>Pin count: 4</li>\n<li>Size: 5.0 x 5.0 mm</li>\n</ul></p>\n<p><b>TC_DATAsheet referenced for footprint:</b> <a href=\"http://cdn.sparkfun.com/TC_DATAsheets/BreakoutBoards/WS2812B.pdf\">WS2812B</a></p>\n<p>Example device:\n<ul><li>WS2812B</li>")
 		(property "Reference" "D1"
 			(at 0 0.6 0)
 			(layer "F.SilkS")
@@ -7180,7 +7180,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://cdn.sparkfun.com/datasheets/BreakoutBoards/WS2812B.pdf"
+		(property "TC_DATAsheet" "https://cdn.sparkfun.com/TC_DATAsheets/BreakoutBoards/WS2812B.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7432,7 +7432,7 @@
 		(layer "F.Cu")
 		(uuid "7ce94b19-d850-4c81-a4af-2b00f50fef12")
 		(at 148.4 44.7)
-		(descr "Fuseholder Clips, 5x20mm Cylinder Fuse, Pins Lateral, Horizontal, Bel FC-203-22, https://www.belfuse.com/resources/datasheets/circuitprotection/ds-cp-0672-fuse-clips-series.pdf")
+		(descr "Fuseholder Clips, 5x20mm Cylinder Fuse, Pins Lateral, Horizontal, Bel FC-203-22, https://www.belfuse.com/resources/TC_DATAsheets/circuitprotection/ds-cp-0672-fuse-clips-series.pdf")
 		(tags "fuse clip open")
 		(property "Reference" "F1"
 			(at 8.95 -1.9 0)
@@ -7469,7 +7469,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://www.digikey.com/short/q7wbwz"
+		(property "TC_DATAsheet" "https://www.digikey.com/short/q7wbwz"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7911,7 +7911,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -8233,7 +8233,7 @@
 		(layer "F.Cu")
 		(uuid "de8f0cb0-98ed-43fe-ba7a-3efc08ddfdac")
 		(at 186.6 53.7 -90)
-		(descr "Terminal Block Phoenix MKDS-1,5-6-5.08, 6 pins, pitch 5.08mm, size 30.5x9.8mm^2, drill diamater 1.3mm, pad diameter 2.6mm, see http://www.farnell.com/datasheets/100425.pdf, script-generated using https://github.com/pointhi/kicad-footprint-generator/scripts/TerminalBlock_Phoenix")
+		(descr "Terminal Block Phoenix MKDS-1,5-6-5.08, 6 pins, pitch 5.08mm, size 30.5x9.8mm^2, drill diamater 1.3mm, pad diameter 2.6mm, see http://www.farnell.com/TC_DATAsheets/100425.pdf, script-generated using https://github.com/pointhi/kicad-footprint-generator/scripts/TerminalBlock_Phoenix")
 		(tags "THT Terminal Block Phoenix MKDS-1,5-6-5.08 pitch 5.08mm size 30.5x9.8mm^2 drill 1.3mm pad 2.6mm")
 		(property "Reference" "J5"
 			(at 27.3 6.625 90)
@@ -8270,7 +8270,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9137,7 +9137,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9560,7 +9560,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
+		(property "TC_DATAsheet" "https://www.omron.com/ecb/products/pdf/en-g5q.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9969,7 +9969,7 @@
 		(layer "F.Cu")
 		(uuid "f8be6af3-67a8-441b-ac12-6841324f622d")
 		(at 186.595 85.6 -90)
-		(descr "Terminal Block Phoenix MKDS-1,5-6-5.08, 6 pins, pitch 5.08mm, size 30.5x9.8mm^2, drill diamater 1.3mm, pad diameter 2.6mm, see http://www.farnell.com/datasheets/100425.pdf, script-generated using https://github.com/pointhi/kicad-footprint-generator/scripts/TerminalBlock_Phoenix")
+		(descr "Terminal Block Phoenix MKDS-1,5-6-5.08, 6 pins, pitch 5.08mm, size 30.5x9.8mm^2, drill diamater 1.3mm, pad diameter 2.6mm, see http://www.farnell.com/TC_DATAsheets/100425.pdf, script-generated using https://github.com/pointhi/kicad-footprint-generator/scripts/TerminalBlock_Phoenix")
 		(tags "THT Terminal Block Phoenix MKDS-1,5-6-5.08 pitch 5.08mm size 30.5x9.8mm^2 drill 1.3mm pad 2.6mm")
 		(property "Reference" "J6"
 			(at 27.6 6.195 90)
@@ -10006,7 +10006,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -10876,7 +10876,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/83510/tcmt1100.pdf"
+		(property "TC_DATAsheet" "http://www.vishay.com/docs/83510/tcmt1100.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -11195,7 +11195,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -11354,7 +11354,7 @@
 			(size 1.3 1.75)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.192308)
-			(net 21 "/CLK")
+			(net 21 "/TC_CLK")
 			(pintype "passive")
 			(uuid "9d6a2991-7db6-46c9-aa81-ee7c0f54ad39")
 		)
@@ -11414,7 +11414,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -11632,7 +11632,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11870,7 +11870,7 @@
 			(size 0.6 1.55)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.25)
-			(net 7 "/I2C_CLK")
+			(net 7 "/I2C_TC_CLK")
 			(pinfunction "Pin_4")
 			(pintype "passive")
 			(uuid "f36c6704-c704-4a5c-9a5f-7d79cc516bf1")
@@ -11945,7 +11945,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -12163,7 +12163,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -12380,7 +12380,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -12599,7 +12599,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -12818,7 +12818,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -13037,7 +13037,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" "http://datasheets.maximintegrated.com/en/ds/MAX31855.pdf"
+		(property "TC_DATAsheet" "http://TC_DATAsheets.maximintegrated.com/en/ds/MAX31855.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -13269,7 +13269,7 @@
 			(size 1.95 0.6)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.25)
-			(net 21 "/CLK")
+			(net 21 "/TC_CLK")
 			(pinfunction "SCK")
 			(pintype "input")
 			(uuid "63db9dea-b1f8-4c65-b2cc-0fc306b6d6a8")
@@ -13289,7 +13289,7 @@
 			(size 1.95 0.6)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.25)
-			(net 20 "/DATA")
+			(net 20 "/TC_DATA")
 			(pinfunction "SO")
 			(pintype "tri_state")
 			(uuid "646dd046-d049-45c1-93ad-d2a5c23c81c0")
@@ -13357,7 +13357,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -13575,7 +13575,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -13792,7 +13792,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -14010,7 +14010,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -14226,7 +14226,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -14443,7 +14443,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -14662,7 +14662,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/83510/tcmt1100.pdf"
+		(property "TC_DATAsheet" "http://www.vishay.com/docs/83510/tcmt1100.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -14981,7 +14981,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" "http://datasheets.maximintegrated.com/en/ds/MAX31855.pdf"
+		(property "TC_DATAsheet" "http://TC_DATAsheets.maximintegrated.com/en/ds/MAX31855.pdf"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -15213,7 +15213,7 @@
 			(size 1.95 0.6)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.25)
-			(net 21 "/CLK")
+			(net 21 "/TC_CLK")
 			(pinfunction "SCK")
 			(pintype "input")
 			(uuid "cbf7a0b4-93ca-4a94-8ad2-a20f7baa052f")
@@ -15233,7 +15233,7 @@
 			(size 1.95 0.6)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.25)
-			(net 20 "/DATA")
+			(net 20 "/TC_DATA")
 			(pinfunction "SO")
 			(pintype "tri_state")
 			(uuid "3348bc81-f600-4c48-981e-6b115979fc77")
@@ -15300,7 +15300,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -15588,7 +15588,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -15806,7 +15806,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -16023,7 +16023,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -16182,7 +16182,7 @@
 			(size 1.3 1.75)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.192308)
-			(net 21 "/CLK")
+			(net 21 "/TC_CLK")
 			(pintype "passive")
 			(uuid "038897cc-6968-41e9-906f-a2beb6900ee4")
 		)
@@ -16242,7 +16242,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "B.Fab")

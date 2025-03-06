@@ -39,7 +39,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -151,7 +151,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -290,7 +290,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "TC_DATAsheet" ""
 				(at 0 0 0)
 				(effects
 					(font
@@ -494,7 +494,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -628,7 +628,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1043,7 +1043,7 @@
 		)
 		(uuid "fd3d2679-023d-48bd-8e74-31dd186803ea")
 	)
-	(hierarchical_label "CLK"
+	(hierarchical_label "TC_CLK"
 		(shape input)
 		(at 113.03 66.04 180)
 		(fields_autoplaced yes)
@@ -1067,7 +1067,7 @@
 		)
 		(uuid "14d80b1f-633a-4f14-99f6-ca221982722e")
 	)
-	(hierarchical_label "DATA"
+	(hierarchical_label "TC_DATA"
 		(shape input)
 		(at 113.03 68.58 180)
 		(fields_autoplaced yes)
@@ -1163,7 +1163,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://datasheets.maximintegrated.com/en/ds/MAX31855.pdf"
+		(property "TC_DATAsheet" "http://TC_DATAsheets.maximintegrated.com/en/ds/MAX31855.pdf"
 			(at 144.78 71.12 0)
 			(effects
 				(font
@@ -1251,7 +1251,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 144.78 60.96 0)
 			(effects
 				(font
@@ -1320,7 +1320,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 170.18 63.5 0)
 			(effects
 				(font
@@ -1394,7 +1394,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 130.81 78.74 0)
 			(effects
 				(font
@@ -1468,7 +1468,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 163.83 71.12 0)
 			(effects
 				(font
@@ -1542,7 +1542,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 124.46 60.96 0)
 			(effects
 				(font
@@ -1614,7 +1614,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 170.18 76.2 0)
 			(effects
 				(font

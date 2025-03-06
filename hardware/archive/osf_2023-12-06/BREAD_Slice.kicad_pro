@@ -536,8 +536,8 @@
         },
         {
           "group_by": false,
-          "label": "Datasheet",
-          "name": "Datasheet",
+          "label": "TC_DATAsheet",
+          "name": "TC_DATAsheet",
           "show": true
         },
         {

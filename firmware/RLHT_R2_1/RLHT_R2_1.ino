@@ -7,10 +7,10 @@
 
 #define ESTOP 2
 #define LED_PIN 5
-#define CS1 10
-#define CS2 11
-#define DATA 12
-#define CLK 13
+#define TC_CS1 10
+#define TC_CS2 11
+#define TC_DATA 12
+#define TC_CLK 13
 #define RELAY1 6
 #define RELAY2 7
 
@@ -53,8 +53,8 @@ union FLOATUNION_t // Define a float that can be broken up and sent via I2C
 };
 
 // initialize the Thermocouples
-MAX6675 CH1(CLK, CS1, DATA);
-MAX6675 CH2(CLK, CS2, DATA);
+MAX6675 CH1(TC_CLK, TC_CS1, TC_DATA);
+MAX6675 CH2(TC_CLK, TC_CS2, TC_DATA);
 
 // Specify the links and initial tuning parameters
 // PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -458,7 +458,7 @@ void requestEvent()
 void receiveEvent(int howMany)
 {
   byte in_char;
-  char in_data[20];
+  char in_TC_DATA[20];
 
   led = CRGB::Green;
   FastLED.show();
@@ -468,14 +468,14 @@ void receiveEvent(int howMany)
   while (Wire.available())
   {
     in_char = Wire.read();
-    in_data[i] = in_char;
-    Serial.print((byte)in_data[i]);
+    in_TC_DATA[i] = in_char;
+    Serial.print((byte)in_TC_DATA[i]);
     Serial.print(",");
     i++;
   }
   Serial.println();
 
-  setParametersRLHT(in_data);
+  setParametersRLHT(in_TC_DATA);
 
   led = CRGB::Black;
   FastLED.show();
@@ -487,44 +487,44 @@ RLHT Command Format:
   P,Kp,Ki,Kd:       PID tuning
 */
 
-void setParametersRLHT(char *in_data)
+void setParametersRLHT(char *in_TC_DATA)
 {
   FLOATUNION_t float1;
   FLOATUNION_t float2;
   FLOATUNION_t float3;
 
-  switch (in_data[0])
+  switch (in_TC_DATA[0])
   {
   case 'H':
     for (int i = 0; i < 4; i++)
-      float1.bytes[i] = in_data[i + 2];
-    if (in_data[1] == 1)
+      float1.bytes[i] = in_TC_DATA[i + 2];
+    if (in_TC_DATA[1] == 1)
     {
       RLHT.heatSetpoint_1 = float1.number;
-      RLHT.thermoSelect[0] = in_data[6];
-      relay1PID.SetControllerDirection(in_data[7]); // Direct = 0, Reverse = 1
+      RLHT.thermoSelect[0] = in_TC_DATA[6];
+      relay1PID.SetControllerDirection(in_TC_DATA[7]); // Direct = 0, Reverse = 1
     }
-    if (in_data[1] == 2)
+    if (in_TC_DATA[1] == 2)
     {
       RLHT.heatSetpoint_2 = float1.number;
-      RLHT.thermoSelect[1] = in_data[6];
-      relay2PID.SetControllerDirection(in_data[7]); // Direct = 0, Reverse = 1
+      RLHT.thermoSelect[1] = in_TC_DATA[6];
+      relay2PID.SetControllerDirection(in_TC_DATA[7]); // Direct = 0, Reverse = 1
     }
     break;
   case 'P':
     for (int i = 0; i < 4; i++) // populate variables for PID tuning
     {
-      float1.bytes[i] = in_data[i + 2];
-      float2.bytes[i] = in_data[i + 6];
-      float3.bytes[i] = in_data[i + 10];
+      float1.bytes[i] = in_TC_DATA[i + 2];
+      float2.bytes[i] = in_TC_DATA[i + 6];
+      float3.bytes[i] = in_TC_DATA[i + 10];
     }
-    if (in_data[1] == 1)
+    if (in_TC_DATA[1] == 1)
     {
       RLHT.Kp_1 = (double)float1.number;
       RLHT.Ki_1 = (double)float2.number;
       RLHT.Kd_1 = (double)float3.number;
     }
-    if (in_data[1] == 2)
+    if (in_TC_DATA[1] == 2)
     {
       RLHT.Kp_2 = (double)float1.number;
       RLHT.Ki_2 = (double)float2.number;

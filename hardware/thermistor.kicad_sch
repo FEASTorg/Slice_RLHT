@@ -36,7 +36,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -225,7 +225,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "~"
+			(property "TC_DATAsheet" "~"
 				(at 0 0 0)
 				(effects
 					(font
@@ -501,7 +501,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 138.43 92.71 0)
 			(effects
 				(font
@@ -574,7 +574,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "TC_DATAsheet" "~"
 			(at 129.54 83.82 0)
 			(effects
 				(font

@@ -22,4 +22,10 @@ struct RLHT_t
     char thermoSelect[2] = {1, 2}; // select which thermocouples pair with relays {relay1, relay2}
 };
 
+union FLOATUNION_t // Define a float that can be broken up and sent via I2C
+{
+    float number;     // the float number
+    uint8_t bytes[4]; // the 4 bytes that make up the float
+};
+
 #endif // WIRE_COMMS_H

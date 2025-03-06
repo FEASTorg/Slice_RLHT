@@ -120,7 +120,7 @@
 	(net 4 "unconnected-(A1-~{RESET}-Pad3)")
 	(net 5 "+5V")
 	(net 6 "/LED")
-	(net 7 "/I2C_CLK")
+	(net 7 "/I2C_TC_CLK")
 	(net 8 "unconnected-(A1-D8-Pad11)")
 	(net 9 "/I2C_DAT")
 	(net 10 "unconnected-(A1-D9-Pad12)")
@@ -135,8 +135,8 @@
 	(net 19 "unconnected-(A1-~{RESET}-Pad28)")
 	(net 20 "+12V")
 	(net 21 "/INT")
-	(net 22 "/DATA")
-	(net 23 "/CLK")
+	(net 22 "/TC_DATA")
+	(net 23 "/TC_CLK")
 	(net 24 "/SS1")
 	(net 25 "/SS2")
 	(net 26 "/T+1")
@@ -209,7 +209,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -319,7 +319,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -429,7 +429,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -539,7 +539,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -648,7 +648,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -1168,7 +1168,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 22 "/DATA")
+			(net 22 "/TC_DATA")
 			(pinfunction "D12")
 			(pintype "bidirectional")
 			(uuid "06965dc4-a65f-4ca6-a58a-a6a24952bd60")
@@ -1179,7 +1179,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 23 "/CLK")
+			(net 23 "/TC_CLK")
 			(pinfunction "D13")
 			(pintype "bidirectional")
 			(uuid "d6ac1d99-abf5-4815-a713-f4a7d8675cd4")
@@ -1267,7 +1267,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 7 "/I2C_CLK")
+			(net 7 "/I2C_TC_CLK")
 			(pinfunction "A5")
 			(pintype "bidirectional")
 			(uuid "3dd37439-e4c3-42c0-861d-94a7221c53a1")
@@ -1390,7 +1390,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2406,7 +2406,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 7 "/I2C_CLK")
+			(net 7 "/I2C_TC_CLK")
 			(pinfunction "Pin_3")
 			(pintype "passive")
 			(uuid "d9a36426-2e97-4a6b-b5ae-e2df78411fde")
@@ -2542,7 +2542,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2708,7 +2708,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2899,7 +2899,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3089,7 +3089,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3468,7 +3468,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3660,7 +3660,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3850,7 +3850,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -4040,7 +4040,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -4228,7 +4228,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -4330,7 +4330,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -4771,7 +4771,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5045,7 +5045,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5236,7 +5236,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5418,7 +5418,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5578,7 +5578,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5768,7 +5768,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6147,7 +6147,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6302,7 +6302,7 @@
 		(layer "F.Cu")
 		(uuid "746fd04f-2e9e-467f-8afd-7b5eb87bd89d")
 		(at 173.3 136.132769)
-		(descr "<h3>WS2812B</h3>\n\n<p>Specifications:\n<ul><li>Pin count: 4</li>\n<li>Size: 5.0 x 5.0 mm</li>\n</ul></p>\n<p><b>Datasheet referenced for footprint:</b> <a href=\"http://cdn.sparkfun.com/datasheets/BreakoutBoards/WS2812B.pdf\">WS2812B</a></p>\n<p>Example device:\n<ul><li>WS2812B</li>")
+		(descr "<h3>WS2812B</h3>\n\n<p>Specifications:\n<ul><li>Pin count: 4</li>\n<li>Size: 5.0 x 5.0 mm</li>\n</ul></p>\n<p><b>TC_DATAsheet referenced for footprint:</b> <a href=\"http://cdn.sparkfun.com/TC_DATAsheets/BreakoutBoards/WS2812B.pdf\">WS2812B</a></p>\n<p>Example device:\n<ul><li>WS2812B</li>")
 		(property "Reference" "D1"
 			(at 0 0.6 0)
 			(layer "F.SilkS")
@@ -6340,7 +6340,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6625,7 +6625,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6786,7 +6786,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7227,7 +7227,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7501,7 +7501,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7692,7 +7692,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7873,7 +7873,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -8064,7 +8064,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -8256,7 +8256,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -8467,7 +8467,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -8701,7 +8701,7 @@
 			(size 0.6 1.55)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.25)
-			(net 7 "/I2C_CLK")
+			(net 7 "/I2C_TC_CLK")
 			(pinfunction "Pin_4")
 			(pintype "passive")
 			(uuid "f36c6704-c704-4a5c-9a5f-7d79cc516bf1")
@@ -8774,7 +8774,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -8985,7 +8985,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9194,7 +9194,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9388,7 +9388,7 @@
 			(size 1.97 0.59)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.07)
-			(net 23 "/CLK")
+			(net 23 "/TC_CLK")
 			(pinfunction "SCK")
 			(pintype "input")
 			(uuid "8d0972ae-59c7-414f-98a9-017a3405898d")
@@ -9408,7 +9408,7 @@
 			(size 1.97 0.59)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.07)
-			(net 22 "/DATA")
+			(net 22 "/TC_DATA")
 			(pinfunction "SO")
 			(pintype "output")
 			(uuid "d64508d7-ca26-4e02-bd43-1da30dbe70cc")
@@ -9466,7 +9466,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9677,7 +9677,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9888,7 +9888,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -10197,7 +10197,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -10506,7 +10506,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -10717,7 +10717,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -10928,7 +10928,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11139,7 +11139,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11422,7 +11422,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11633,7 +11633,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11842,7 +11842,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -12036,7 +12036,7 @@
 			(size 1.97 0.59)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.07)
-			(net 23 "/CLK")
+			(net 23 "/TC_CLK")
 			(pinfunction "SCK")
 			(pintype "input")
 			(uuid "d71b49bb-3eb9-4b03-a262-d60560a3457f")
@@ -12056,7 +12056,7 @@
 			(size 1.97 0.59)
 			(layers "B.Cu" "B.Paste" "B.Mask")
 			(roundrect_rratio 0.07)
-			(net 22 "/DATA")
+			(net 22 "/TC_DATA")
 			(pinfunction "SO")
 			(pintype "output")
 			(uuid "f96dbbce-bcef-4c90-b56d-e81d64e64388")
@@ -12114,7 +12114,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "TC_DATAsheet" ""
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
