@@ -146,21 +146,8 @@ void setup()
 void loop()
 {
 
-  // Poll the estop flag and process if triggered.
-  if (estopTriggered)
-  {
-    // Update LED to indicate emergency stop
-    led = CRGB::Red;
-    FastLED.show();
-    processEStop();
-    estopTriggered = false; // Reset flag after handling
-  }
-  else
-  {
-    // Update LED to indicate normal operation
-    led = CRGB::Green;
-    FastLED.show();
-  }
+  // poll the emergency stop
+  pollEStop();
 
   // read the thermocouples
   measureThermocouples();
@@ -231,6 +218,24 @@ void loop()
   }
 }
 
+void pollEStop()
+{
+  if (estopTriggered)
+  {
+    // Update LED to indicate emergency stop
+    led = CRGB::Red;
+    FastLED.show();
+    processEStop();
+    estopTriggered = false; // Reset flag after handling
+  }
+  else
+  {
+    // Update LED to indicate normal operation
+    led = CRGB::Green;
+    FastLED.show();
+  }
+}
+
 void estopISR()
 {
   estopTriggered = true;
@@ -241,13 +246,6 @@ void processEStop()
   // Read the current state of the estop pin if needed for debouncing/validation
   if (digitalRead(ESTOP) == HIGH)
   {
-
-    // Save current states if necessary
-    RLHT_prev.heatSetpoint_1 = RLHT_curr.heatSetpoint_1;
-    RLHT_prev.heatSetpoint_2 = RLHT_curr.heatSetpoint_2;
-    RLHT_prev.rOnTime_1 = RLHT_curr.rOnTime_1;
-    RLHT_prev.rOnTime_2 = RLHT_curr.rOnTime_2;
-
     // Disable PID and turn off relays safely
     RLHT_curr.heatSetpoint_1 = 0;
     RLHT_curr.heatSetpoint_2 = 0;
