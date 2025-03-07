@@ -3,25 +3,87 @@
 #include <FastLED.h>
 #include <PID_v1.h>
 
+// BREAD specific libs
+#include <CRUMBS.h>
+
 // internal libs
 #include "hardware_config.h"
 #include "config.h"
-#include "wire_comms.h"
 
-// init timing vars
-long lastThermoRead = 0;
-long lastSerialPrint = 0;
+/**
+ * @def SLICE_PRINT
+ * @brief Uncomment to enable print messages.
+ */
 
-// initialize the relay timing variables
-unsigned long relay1StartTime;
-unsigned long relay2StartTime;
+#define SLICE_PRINT 1
 
-// init var for emergency stop trigger
-bool E_STOP = false;
+#ifdef SLICE_PRINT
 
-// create pbject for the LED
+#define SLICE_PRINT(...) \
+  Serial.print(__VA_ARGS__)
+
+#define SLICE_PRINTLN(...) \
+  Serial.println(__VA_ARGS__)
+
+#else
+#define SLICE_PRINT(...)
+#define SLICE_PRINTLN(...)
+#endif
+
+/**
+ * @def SLICE_DEBUG
+ * @brief Uncomment to enable additional debugging messages.
+ */
+
+// #define SLICE_DEBUG 1
+
+#ifdef SLICE_DEBUG
+
+#define SLICE_DEBUG_PRINT(...) \
+  Serial.print(__VA_ARGS__)
+
+#define SLICE_DEBUG_PRINTLN(...) \
+  Serial.println(__VA_ARGS__)
+
+#else
+#define SLICE_DEBUG_PRINT(...)
+#define SLICE_DEBUG_PRINTLN(...)
+#endif
+
+struct RelayHeaters
+{
+  double heatSetpoint_1 = 0; // set desired temperature for heater 1 (if using relay as heater actuator)
+  double relay1Input;        // input to relay 1 taken from selected thermocouple
+  double rOnTime_1;          // time relay is on in ms (0-period)
+  int rPeriod_1 = 2000;      // duration of relay 1 cycle in ms (1000ms = 1s)
+  double Kp_1 = 0;           // PID proportional gain for heater 1
+  double Ki_1 = 0;           // PID integral gain for heater 1
+  double Kd_1 = 0;           // PID derivative gain for heater 1
+  double heatSetpoint_2 = 0;
+  double relay2Input;
+  double rOnTime_2;
+  int rPeriod_2 = 2000;
+  double Kp_2 = 0;
+  double Ki_2 = 0;
+  double Kd_2 = 0;
+  double thermo1; // thermocouple 1 measurement
+  double thermo2;
+  char thermoSelect[2] = {1, 2}; // select which thermocouples pair with relays {relay1, relay2}
+  bool eStop = false;            // emergency stop flag
+};
+
+RelayHeaters RLHT_curr, RLHT_prev;
+
+struct Timing
+{
+  long lastThermoRead;
+  long lastSerialPrint;
+  unsigned long relay1Start;
+  unsigned long relay2Start;
+} timing = {0};
+
+// create object for the LED
 CRGB led;
-int hue = 0;
 
 // initialize the Thermocouples
 MAX6675 thermocouple1(TC_CLK, TC_CS1, TC_DATA);
@@ -29,8 +91,8 @@ MAX6675 thermocouple2(TC_CLK, TC_CS2, TC_DATA);
 
 // Specify the links and initial tuning parameters
 // PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
-PID relay1PID(&(RLHT.relay1Input), &(RLHT.rOnTime_1), &(RLHT.heatSetpoint_1), RLHT.Kp_1, RLHT.Ki_1, RLHT.Kd_1, DIRECT);
-PID relay2PID(&(RLHT.relay2Input), &(RLHT.rOnTime_2), &(RLHT.heatSetpoint_2), RLHT.Kp_2, RLHT.Ki_2, RLHT.Kd_2, DIRECT);
+PID relay1PID(&(RLHT_curr.relay1Input), &(RLHT_curr.rOnTime_1), &(RLHT_curr.heatSetpoint_1), RLHT_curr.Kp_1, RLHT_curr.Ki_1, RLHT_curr.Kd_1, DIRECT);
+PID relay2PID(&(RLHT_curr.relay2Input), &(RLHT_curr.rOnTime_2), &(RLHT_curr.heatSetpoint_2), RLHT_curr.Kp_2, RLHT_curr.Ki_2, RLHT_curr.Kd_2, DIRECT);
 
 enum Mode
 {
@@ -38,10 +100,19 @@ enum Mode
   WRITE
 } currentMode = CONTROL;
 
+// CRUMBS start
+CRUMBS crumbsSlice(false, I2C_ADR); // Slave mode, I2C address 0x08
+
 void setup()
 {
   // initialize serial communication
   Serial.begin(115200);
+
+  // Initialize CRUMBS communication
+  crumbsSlice.begin();
+
+  crumbsSlice.onRequest(handleRequest); // Register callback for data requests
+  crumbsSlice.onReceive(handleMessage); // Register callback for received messages
 
   // initialize the LED
   FastLED.addLeds<NEOPIXEL, LED_PIN>(&led, 1);
@@ -55,16 +126,16 @@ void setup()
   pinMode(RELAY2, OUTPUT);
 
   // tell the PID to range between 0 and the full window size
-  relay1PID.SetOutputLimits(0, RLHT.rPeriod_1);
-  relay2PID.SetOutputLimits(0, RLHT.rPeriod_2);
+  relay1PID.SetOutputLimits(0, RLHT_curr.rPeriod_1);
+  relay2PID.SetOutputLimits(0, RLHT_curr.rPeriod_2);
 
   // turn the PID on
   relay1PID.SetMode(AUTOMATIC);
   relay2PID.SetMode(AUTOMATIC);
 
   // initialize the relay start times
-  relay1StartTime = millis();
-  relay2StartTime = millis();
+  timing.relay1Start = millis();
+  timing.relay2Start = millis();
 
   // small delay before entering loop
   delay(1000);
@@ -77,54 +148,68 @@ void loop()
   measureThermocouples();
 
   // handle serial commands
-  serialCommandHandler();
+  // handleSerialInput();
 
   // print output to serial
   printSerialOutput();
 
-  if (!E_STOP && currentMode == CONTROL)
+  if (!RLHT_curr.eStop && currentMode == CONTROL)
   {
-    setPIDTunings();
+    // ensure the PID is on
+    relay1PID.SetMode(AUTOMATIC);
+    relay2PID.SetMode(AUTOMATIC);
+
+    // set the PID tunings
+    relay1PID.SetTunings(RLHT_curr.Kp_1, RLHT_curr.Ki_1, RLHT_curr.Kd_1);
+    relay2PID.SetTunings(RLHT_curr.Kp_2, RLHT_curr.Ki_2, RLHT_curr.Kd_2);
+
     // assign thermocouple readings to relay inputs
-    switch (RLHT.thermoSelect[0])
+    switch (RLHT_curr.thermoSelect[0])
     {
     case 1: // thermocouple 1 to relay 1
-      RLHT.relay1Input = RLHT.thermo1;
+      RLHT_curr.relay1Input = RLHT_curr.thermo1;
       break;
     case 2: // thermocouple 2 to relay 1
-      RLHT.relay1Input = RLHT.thermo2;
+      RLHT_curr.relay1Input = RLHT_curr.thermo2;
       break;
     }
-    if (isnan(RLHT.relay1Input))
-      RLHT.rOnTime_1 = 0;
+    if (isnan(RLHT_curr.relay1Input))
+      RLHT_curr.rOnTime_1 = 0;
     else
       relay1PID.Compute();
 
-    switch (RLHT.thermoSelect[1])
+    switch (RLHT_curr.thermoSelect[1])
     {
     case 1: // thermocouple 1 to relay 2
-      RLHT.relay2Input = RLHT.thermo1;
+      RLHT_curr.relay2Input = RLHT_curr.thermo1;
       break;
     case 2: // thermocouple 2 to relay 2
-      RLHT.relay2Input = RLHT.thermo2;
+      RLHT_curr.relay2Input = RLHT_curr.thermo2;
       break;
     }
-    if (isnan(RLHT.relay2Input))
-      RLHT.rOnTime_2 = 0;
+    if (isnan(RLHT_curr.relay2Input))
+      RLHT_curr.rOnTime_2 = 0;
     else
       relay2PID.Compute();
 
+    // actuate the relays
     actuateRelays();
   }
-  else if (!E_STOP && currentMode == WRITE)
+  else if (!RLHT_curr.eStop && currentMode == WRITE)
   {
+    // ensure the PID is off
+    relay1PID.SetMode(MANUAL);
+    relay2PID.SetMode(MANUAL);
+
+    // actuate the relays
     actuateRelays();
   }
   else
   {
+    // turn off the relays
     digitalWrite(RELAY1, LOW);
     digitalWrite(RELAY2, LOW);
-    Serial.println(F("ERROR, UNKNOWN STATE!"));
+    SLICE_DEBUG_PRINTLN(F("ERROR, UNKNOWN STATE!"));
   }
 }
 
@@ -136,24 +221,24 @@ void estop()
     FastLED.show();
 
     // save states
-    RLHT_old.heatSetpoint_1 = RLHT.heatSetpoint_1;
-    RLHT_old.heatSetpoint_2 = RLHT.heatSetpoint_2;
-    RLHT_old.rOnTime_1 = RLHT.rOnTime_1;
-    RLHT_old.rOnTime_2 = RLHT.rOnTime_2;
+    RLHT_prev.heatSetpoint_1 = RLHT_curr.heatSetpoint_1;
+    RLHT_prev.heatSetpoint_2 = RLHT_curr.heatSetpoint_2;
+    RLHT_prev.rOnTime_1 = RLHT_curr.rOnTime_1;
+    RLHT_prev.rOnTime_2 = RLHT_curr.rOnTime_2;
 
     // set critical states to zero and turn off relays
-    RLHT.heatSetpoint_1 = 0;
-    RLHT.heatSetpoint_2 = 0;
-    RLHT.rOnTime_1 = 0;
-    RLHT.rOnTime_2 = 0;
+    RLHT_curr.heatSetpoint_1 = 0;
+    RLHT_curr.heatSetpoint_2 = 0;
+    RLHT_curr.rOnTime_1 = 0;
+    RLHT_curr.rOnTime_2 = 0;
 
     // turn off relays
     digitalWrite(RELAY1, LOW);
     digitalWrite(RELAY2, LOW);
 
     // set the ESTOP flag
-    E_STOP = true;
-    Serial.println("ESTOP PRESSED!");
+    RLHT_curr.eStop = true;
+    SLICE_DEBUG_PRINTLN("ESTOP PRESSED!");
   }
   else // when ESTOP state is LOW i.e. normal operation
   {
@@ -161,49 +246,231 @@ void estop()
     FastLED.show();
 
     // reassign old states
-    RLHT_old.heatSetpoint_1 = RLHT_old.heatSetpoint_1;
-    RLHT_old.heatSetpoint_2 = RLHT_old.heatSetpoint_2;
-    RLHT_old.rOnTime_1 = RLHT_old.rOnTime_1;
-    RLHT_old.rOnTime_2 = RLHT_old.rOnTime_2;
+    RLHT_prev.heatSetpoint_1 = RLHT_prev.heatSetpoint_1;
+    RLHT_prev.heatSetpoint_2 = RLHT_prev.heatSetpoint_2;
+    RLHT_prev.rOnTime_1 = RLHT_prev.rOnTime_1;
+    RLHT_prev.rOnTime_2 = RLHT_prev.rOnTime_2;
 
     // clear the ESTOP flag
-    E_STOP = false;
-    Serial.println("ESTOP RELEASED!");
+    RLHT_curr.eStop = false;
+    SLICE_DEBUG_PRINTLN("ESTOP RELEASED!");
   }
+}
+
+/**
+ * @brief Callback function to handle received CRUMBSMessages from the Master.
+ *
+ * @param message The received CRUMBSMessage.
+ */
+void handleMessage(CRUMBSMessage &message)
+{
+  // Debug print the received message
+  SLICE_DEBUG_PRINTLN(F("Slice: Received Message:"));
+  SLICE_DEBUG_PRINT(F("typeID: "));
+  SLICE_DEBUG_PRINTLN(message.typeID);
+  SLICE_DEBUG_PRINT(F("commandType: "));
+  SLICE_DEBUG_PRINTLN(message.commandType);
+  SLICE_DEBUG_PRINT(F("data: "));
+  for (int i = 0; i < 6; i++)
+  {
+    SLICE_DEBUG_PRINT(message.data[i]);
+    SLICE_DEBUG_PRINT(F(" "));
+  }
+  SLICE_DEBUG_PRINTLN();
+  SLICE_DEBUG_PRINT(F("errorFlags: "));
+  SLICE_DEBUG_PRINTLN(message.errorFlags);
+
+  // Check if typeID matches the expected value
+  if (message.typeID != TYPE_ID)
+  {
+    SLICE_DEBUG_PRINTLN(F("Slice: Type ID mismatch."));
+    return;
+  }
+
+  // Process the message based on commandType
+  switch (message.commandType)
+  {
+  case 0:
+    // CommandType 0: Data Request Format Command
+    SLICE_DEBUG_PRINTLN(F("Slice: Data Request Format Command Received."));
+
+    // implement
+
+    break;
+
+  case 1:
+    // CommandType 1: Change Mode Command
+    currentMode = (Mode)message.data[0]; // Cast data to Mode enum where 0 = CONTROL, 1 = WRITE
+    SLICE_DEBUG_PRINT(F("Slice: Mode Change Command Received. Mode: "));
+    SLICE_DEBUG_PRINTLN(currentMode == CONTROL ? F("CONTROL") : F("WRITE"));
+    break;
+
+  case 2:
+    // CommandType 2: Change Setpoint Command
+    RLHT_curr.heatSetpoint_1 = message.data[0]; // Set desired temperature for heater 1
+    RLHT_curr.heatSetpoint_2 = message.data[1]; // Set desired temperature for heater 2
+    SLICE_DEBUG_PRINT(F("Slice: Setpoint Change Command Received. Setpoint1: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.heatSetpoint_1);
+    SLICE_DEBUG_PRINT(F(", Setpoint2: "));
+    SLICE_DEBUG_PRINTLN(RLHT_curr.heatSetpoint_2);
+    break;
+
+  case 3:
+    // CommandType 3: Change PID Tuning Command
+    RLHT_curr.Kp_1 = message.data[0]; // Set PID proportional gain for heater 1
+    RLHT_curr.Ki_1 = message.data[1]; // Set PID integral gain for heater 1
+    RLHT_curr.Kd_1 = message.data[2]; // Set PID derivative gain for heater 1
+    RLHT_curr.Kp_2 = message.data[3]; // Set PID proportional gain for heater 2
+    RLHT_curr.Ki_2 = message.data[4]; // Set PID integral gain for heater 2
+    RLHT_curr.Kd_2 = message.data[5]; // Set PID derivative gain for heater 2
+    SLICE_DEBUG_PRINT(F("Slice: PID Tuning Change Command Received. Kp1: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.Kp_1);
+    SLICE_DEBUG_PRINT(F(", Ki1: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.Ki_1);
+    SLICE_DEBUG_PRINT(F(", Kd1: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.Kd_1);
+    SLICE_DEBUG_PRINT(F(", Kp2: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.Kp_2);
+    SLICE_DEBUG_PRINT(F(", Ki2: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.Ki_2);
+    SLICE_DEBUG_PRINT(F(", Kd2: "));
+    SLICE_DEBUG_PRINTLN(RLHT_curr.Kd_2);
+    break;
+
+  case 4:
+    // CommandType 4: Change Relay Period Command
+    RLHT_curr.rPeriod_1 = message.data[0]; // Set duration of relay 1 cycle in ms
+    RLHT_curr.rPeriod_2 = message.data[1]; // Set duration of relay 2 cycle in ms
+    SLICE_DEBUG_PRINT(F("Slice: Relay Period Change Command Received. Period1: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.rPeriod_1);
+    SLICE_DEBUG_PRINT(F(", Period2: "));
+    SLICE_DEBUG_PRINTLN(RLHT_curr.rPeriod_2);
+    break;
+
+  case 5:
+    // CommandType 5: Change Thermocouple Select Command
+    RLHT_curr.thermoSelect[0] = message.data[0]; // Select which thermocouple pairs with relay 1
+    RLHT_curr.thermoSelect[1] = message.data[1]; // Select which thermocouple pairs with relay 2
+    SLICE_DEBUG_PRINT(F("Slice: Thermocouple Select Command Received. ThermoSelect1: "));
+    SLICE_DEBUG_PRINT(RLHT_curr.thermoSelect[0]);
+    SLICE_DEBUG_PRINT(F(", ThermoSelect2: "));
+    SLICE_DEBUG_PRINTLN(RLHT_curr.thermoSelect[1]);
+    break;
+
+  case 6:
+    // CommandType 6: Write to the relays directly (write mode only)
+    if (currentMode == WRITE)
+    {
+      // assume data0 is relay 1 and data1 is relay 2 and both are 0-100% duty cycle
+      double input1 = message.data[0]; // Extract relay input
+      double input2 = message.data[1]; // Extract relay input
+
+      // limit it from 0 to 100
+      input1 = (input1 < 0) ? 0 : (input1 > 100) ? 100
+                                                 : input1;
+      input2 = (input2 < 0) ? 0 : (input2 > 100) ? 100
+                                                 : input2;
+      // cast the input to an integer
+      int newOnTime1 = (int)input1;
+      int newOnTime2 = (int)input2;
+
+      // scale from 0 to 100 to 0 to rPeriod
+      newOnTime1 = map(newOnTime1, 0, 100, 0, RLHT_curr.rPeriod_1);
+      newOnTime2 = map(newOnTime2, 0, 100, 0, RLHT_curr.rPeriod_2);
+      RLHT_curr.rOnTime_1 = newOnTime1;
+      RLHT_curr.rOnTime_2 = newOnTime2;
+      SLICE_DEBUG_PRINT(F("Slice: Relay 1 input updated to: "));
+      SLICE_DEBUG_PRINT(input1);
+      SLICE_DEBUG_PRINT(F(", Relay 2 input updated to: "));
+      SLICE_DEBUG_PRINTLN(input2);
+    }
+    else
+    {
+      SLICE_DEBUG_PRINTLN(F("Slice: ERROR: Not in WRITE mode!"));
+    }
+    break;
+
+  default:
+    SLICE_DEBUG_PRINTLN(F("Slice: Unknown Command Type."));
+    break;
+  }
+
+  SLICE_DEBUG_PRINTLN(F("Slice: Message processing complete."));
+}
+
+/**
+ * @brief Callback function to handle data requests from the Master.
+ *
+ * @note This function sends a CRUMBSMessage back to the Master in response to a request.
+ */
+void handleRequest()
+{
+  SLICE_DEBUG_PRINTLN(F("Slice: Master requested data, sending response..."));
+
+  // Prepare response message
+  CRUMBSMessage responseMessage;
+  responseMessage.typeID = 1;      /**< SLICE type ID */
+  responseMessage.commandType = 0; /**< CommandType 0 for status response */
+
+  // Populate data fields with example data
+  responseMessage.data[0] = 42.0f; /**< Example data0 */
+  responseMessage.data[1] = 1.0f;  /**< Example data1 */
+  responseMessage.data[2] = 2.0f;  /**< Example data2 */
+  responseMessage.data[3] = 3.0f;  /**< Example data3 */
+  responseMessage.data[4] = 4.0f;  /**< Example data4 */
+  responseMessage.data[5] = 5.0f;  /**< Example data5 */
+
+  responseMessage.errorFlags = 0; /**< No errors */
+
+  uint8_t buffer[CRUMBS_MESSAGE_SIZE];
+  size_t encodedSize = crumbsSlice.encodeMessage(responseMessage, buffer, sizeof(buffer));
+
+  if (encodedSize == 0)
+  {
+    SLICE_DEBUG_PRINTLN(F("Slice: Failed to encode response message."));
+    return;
+  }
+
+  // Send the encoded message back to the Master
+  Wire.write(buffer, encodedSize);
+  SLICE_DEBUG_PRINTLN(F("Slice: Response message sent."));
 }
 
 void measureThermocouples()
 {
-  if (millis() - lastThermoRead >= THERMO_UPDATE_TIME_MS)
+  if (millis() - timing.lastThermoRead >= THERMO_UPDATE_TIME_MS)
   {
-    RLHT.thermo1 = thermocouple1.readCelsius();
-    RLHT.thermo2 = thermocouple2.readCelsius();
-    lastThermoRead = millis();
+    RLHT_curr.thermo1 = thermocouple1.readCelsius();
+    RLHT_curr.thermo2 = thermocouple2.readCelsius();
+    timing.lastThermoRead = millis();
   }
 }
 
 void actuateRelays()
 {
-  if (RLHT.heatSetpoint_1 == 0 && currentMode == CONTROL)
-    RLHT.rOnTime_1 = 0;
-  if (RLHT.heatSetpoint_2 == 0 && currentMode == CONTROL)
-    RLHT.rOnTime_2 = 0;
+
+  // turn off relays if setpoint is zero
+  if (RLHT_curr.heatSetpoint_1 == 0 && currentMode == CONTROL)
+    RLHT_curr.rOnTime_1 = 0;
+  if (RLHT_curr.heatSetpoint_2 == 0 && currentMode == CONTROL)
+    RLHT_curr.rOnTime_2 = 0;
+
   // Relay 1
-  if (millis() - relay1StartTime > RLHT.rPeriod_1)
+  if (millis() - timing.relay1Start > RLHT_curr.rPeriod_1)
   { // time to shift the Relay Window
-    relay1StartTime += RLHT.rPeriod_1;
+    timing.relay1Start += RLHT_curr.rPeriod_1;
   }
-  if ((int)(RLHT.rOnTime_1) > millis() - relay1StartTime)
+  if ((int)(RLHT_curr.rOnTime_1) > millis() - timing.relay1Start)
     digitalWrite(RELAY1, HIGH);
   else
     digitalWrite(RELAY1, LOW);
 
   // Relay 2
-  if (millis() - relay2StartTime > RLHT.rPeriod_2)
+  if (millis() - timing.relay2Start > RLHT_curr.rPeriod_2)
   { // time to shift the Relay Window
-    relay2StartTime += RLHT.rPeriod_2;
+    timing.relay2Start += RLHT_curr.rPeriod_2;
   }
-  if ((int)(RLHT.rOnTime_2) > millis() - relay2StartTime)
+  if ((int)(RLHT_curr.rOnTime_2) > millis() - timing.relay2Start)
     digitalWrite(RELAY2, HIGH);
   else
     digitalWrite(RELAY2, LOW);
@@ -211,182 +478,43 @@ void actuateRelays()
 
 void printSerialOutput()
 {
-  if (millis() - lastSerialPrint >= SERIAL_UPDATE_TIME_MS)
+  if (millis() - timing.lastSerialPrint >= SERIAL_UPDATE_TIME_MS)
   {
-    Serial.print(F("Mode: "));
-    Serial.print(currentMode == CONTROL ? "CONTROL" : "WRITE");
-    Serial.print(F(", T1:"));
-    Serial.print(RLHT.thermo1);
-    Serial.print(F(", T2:"));
-    Serial.print(RLHT.thermo2);
+    SLICE_PRINT(F("Mode: "));
+    SLICE_PRINT(currentMode == CONTROL ? "CONTROL" : "WRITE");
+    SLICE_PRINT(F(", T1:"));
+    SLICE_PRINT(RLHT_curr.thermo1);
+    SLICE_PRINT(F(", T2:"));
+    SLICE_PRINT(RLHT_curr.thermo2);
 
-    Serial.print(F(", PID1:"));
-    Serial.print(RLHT.Kp_1);
-    Serial.print(F(","));
-    Serial.print(RLHT.Ki_1);
-    Serial.print(F(","));
-    Serial.print(RLHT.Kd_1);
+    SLICE_PRINT(F(", PID1:"));
+    SLICE_PRINT(RLHT_curr.Kp_1);
+    SLICE_PRINT(F(","));
+    SLICE_PRINT(RLHT_curr.Ki_1);
+    SLICE_PRINT(F(","));
+    SLICE_PRINT(RLHT_curr.Kd_1);
 
-    Serial.print(F(", Relay1Input:"));
-    Serial.print(RLHT.relay1Input);
-    Serial.print(F(", Setpoint1:"));
-    Serial.print(RLHT.heatSetpoint_1);
-    Serial.print(F(",onTime1:"));
-    Serial.print((int)RLHT.rOnTime_1);
+    SLICE_PRINT(F(", Relay1Input:"));
+    SLICE_PRINT(RLHT_curr.relay1Input);
+    SLICE_PRINT(F(", Setpoint1:"));
+    SLICE_PRINT(RLHT_curr.heatSetpoint_1);
+    SLICE_PRINT(F(",onTime1:"));
+    SLICE_PRINT((int)RLHT_curr.rOnTime_1);
 
-    Serial.print(F(", PID2:"));
-    Serial.print(RLHT.Kp_2);
-    Serial.print(F(","));
-    Serial.print(RLHT.Ki_2);
-    Serial.print(F(","));
-    Serial.print(RLHT.Kd_2);
+    SLICE_PRINT(F(", PID2:"));
+    SLICE_PRINT(RLHT_curr.Kp_2);
+    SLICE_PRINT(F(","));
+    SLICE_PRINT(RLHT_curr.Ki_2);
+    SLICE_PRINT(F(","));
+    SLICE_PRINT(RLHT_curr.Kd_2);
 
-    Serial.print(F(", Relay2Input:"));
-    Serial.print(RLHT.relay2Input);
-    Serial.print(F(", Setpoint2:"));
-    Serial.print(RLHT.heatSetpoint_2);
-    Serial.print(F(", onTime2:"));
-    Serial.println((int)RLHT.rOnTime_2);
+    SLICE_PRINT(F(", Relay2Input:"));
+    SLICE_PRINT(RLHT_curr.relay2Input);
+    SLICE_PRINT(F(", Setpoint2:"));
+    SLICE_PRINT(RLHT_curr.heatSetpoint_2);
+    SLICE_PRINT(F(", onTime2:"));
+    SLICE_PRINTLN((int)RLHT_curr.rOnTime_2);
 
-    lastSerialPrint = millis();
-  }
-}
-
-void serialCommandHandler()
-{
-  if (Serial.available())
-  {
-    String command = Serial.readStringUntil('\n'); // Read serial input until newline
-    command.trim();                                // Remove whitespace
-
-    Serial.println("Received command: " + command);
-
-    char cmdType = command.charAt(0); // First character determines command type
-
-    if (cmdType == 'M') // Mode
-    {
-      int mode = command.charAt(2) - '0'; // 0 = CONTROL, 1 = WRITE
-
-      if (mode == 0)
-      {
-        currentMode = CONTROL;
-        relay1PID.SetMode(AUTOMATIC); // Turn on PID
-        relay2PID.SetMode(AUTOMATIC);
-        Serial.println(F("Switched to CONTROL mode"));
-      }
-      else if (mode == 1)
-      {
-        currentMode = WRITE;
-        relay1PID.SetMode(WRITE); // Turn off PID
-        relay2PID.SetMode(WRITE);
-        Serial.println(F("Switched to WRITE mode"));
-      }
-    }
-    else if (cmdType == 'W') // Write relay input
-    {
-      if (currentMode == WRITE)
-      {
-        int relay = command.charAt(2) - '0';           // 1 or 2
-        double input = command.substring(4).toFloat(); // Extract relay input
-
-        // limit it from 0 to 100
-        input = (input < 0) ? 0 : (input > 100) ? 100
-                                                : input;
-        // cast the input to an integer
-        int newOnTime = (int)input;
-
-        if (relay == 1)
-        {
-          // scale from 0 to 100 to 0 to rPeriod
-          newOnTime = map(newOnTime, 0, 100, 0, RLHT.rPeriod_1);
-          RLHT.rOnTime_1 = newOnTime;
-          Serial.print(F("Relay 1 input updated to: "));
-        }
-        else if (relay == 2)
-        {
-          // scale from 0 to 100 to 0 to rPeriod
-          newOnTime = map(newOnTime, 0, 100, 0, RLHT.rPeriod_2);
-          RLHT.rOnTime_2 = newOnTime;
-          Serial.print(F("Relay 2 input updated to: "));
-        }
-        Serial.println(input);
-      }
-      else
-      {
-        Serial.println(F("ERROR: Not in WRITE mode!"));
-      }
-    }
-    else if (cmdType == 'H') // Heater Setpoint
-    {
-      int heater = command.charAt(2) - '0';             // Heater number (1 or 2)
-      double setpoint = command.substring(4).toFloat(); // Extract temperature setpoint
-
-      if (heater == 1)
-      {
-        RLHT.heatSetpoint_1 = setpoint;
-        Serial.print(F("Heater 1 setpoint updated to: "));
-      }
-      else if (heater == 2)
-      {
-        RLHT.heatSetpoint_2 = setpoint;
-        Serial.print(F("Heater 2 setpoint updated to: "));
-      }
-      Serial.println(setpoint);
-    }
-    else if (cmdType == 'P') // PID Tuning
-    {
-      int heater = command.charAt(2) - '0';
-      int firstComma = command.indexOf(',', 4);
-      int secondComma = command.indexOf(',', firstComma + 1);
-      int thirdComma = command.indexOf(',', secondComma + 1);
-
-      double Kp = command.substring(4, firstComma).toFloat();
-      double Ki = command.substring(firstComma + 1, secondComma).toFloat();
-      double Kd = command.substring(secondComma + 1, thirdComma).toFloat();
-
-      if (heater == 1)
-      {
-        RLHT.Kp_1 = Kp;
-        RLHT.Ki_1 = Ki;
-        RLHT.Kd_1 = Kd;
-        relay1PID.SetTunings(Kp, Ki, Kd);
-        Serial.print("PID Heater 1 updated: ");
-      }
-      else if (heater == 2)
-      {
-        RLHT.Kp_2 = Kp;
-        RLHT.Ki_2 = Ki;
-        RLHT.Kd_2 = Kd;
-        relay2PID.SetTunings(Kp, Ki, Kd);
-        Serial.print("PID Heater 2 updated: ");
-      }
-      Serial.print("Kp = ");
-      Serial.print(Kp);
-      Serial.print(", Ki = ");
-      Serial.print(Ki);
-      Serial.print(", Kd = ");
-      Serial.println(Kd);
-    }
-    else if (cmdType == 'S') // Thermo select
-    {
-      int relay = command.charAt(2) - '0';
-      char thermo = command.charAt(4);
-
-      if (relay == 1)
-      {
-        RLHT.thermoSelect[0] = thermo;
-        Serial.print("ThermoSelect 1 updated: ");
-      }
-      else if (relay == 2)
-      {
-        RLHT.thermoSelect[1] = thermo;
-        Serial.print("ThermoSelect 2 updated: ");
-      }
-      Serial.println(thermo);
-    }
-    else
-    {
-      Serial.println("Invalid command!");
-    }
+    timing.lastSerialPrint = millis();
   }
 }

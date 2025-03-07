@@ -3,6 +3,7 @@
 
 // define the I2C address for this SLICE device
 #define I2C_ADR 10
+#define TYPE_ID 1 // SLICE type ID for RLHT!!!
 
 // timing constants
 #define THERMO_UPDATE_TIME_MS 300
