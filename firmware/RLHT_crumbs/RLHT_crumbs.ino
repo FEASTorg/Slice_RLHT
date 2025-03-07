@@ -82,6 +82,8 @@ struct Timing
   unsigned long relay2Start;
 } timing = {0};
 
+volatile bool estopTriggered = false;
+
 // create object for the LED
 CRGB led;
 
@@ -119,7 +121,7 @@ void setup()
 
   // initialize the estop
   pinMode(ESTOP, INPUT);
-  attachInterrupt(digitalPinToInterrupt(ESTOP), estop, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ESTOP), estopISR, CHANGE);
 
   // initialize the relay pins
   pinMode(RELAY1, OUTPUT);
@@ -143,6 +145,22 @@ void setup()
 
 void loop()
 {
+
+  // Poll the estop flag and process if triggered.
+  if (estopTriggered)
+  {
+    // Update LED to indicate emergency stop
+    led = CRGB::Red;
+    FastLED.show();
+    processEStop();
+    estopTriggered = false; // Reset flag after handling
+  }
+  else
+  {
+    // Update LED to indicate normal operation
+    led = CRGB::Green;
+    FastLED.show();
+  }
 
   // read the thermocouples
   measureThermocouples();
@@ -213,45 +231,42 @@ void loop()
   }
 }
 
-void estop()
+void estopISR()
 {
-  if (digitalRead(ESTOP) == HIGH) // when set to HIGH state
-  {
-    led = CRGB::Red;
-    FastLED.show();
+  estopTriggered = true;
+}
 
-    // save states
+void processEStop()
+{
+  // Read the current state of the estop pin if needed for debouncing/validation
+  if (digitalRead(ESTOP) == HIGH)
+  {
+
+    // Save current states if necessary
     RLHT_prev.heatSetpoint_1 = RLHT_curr.heatSetpoint_1;
     RLHT_prev.heatSetpoint_2 = RLHT_curr.heatSetpoint_2;
     RLHT_prev.rOnTime_1 = RLHT_curr.rOnTime_1;
     RLHT_prev.rOnTime_2 = RLHT_curr.rOnTime_2;
 
-    // set critical states to zero and turn off relays
+    // Disable PID and turn off relays safely
     RLHT_curr.heatSetpoint_1 = 0;
     RLHT_curr.heatSetpoint_2 = 0;
     RLHT_curr.rOnTime_1 = 0;
     RLHT_curr.rOnTime_2 = 0;
-
-    // turn off relays
     digitalWrite(RELAY1, LOW);
     digitalWrite(RELAY2, LOW);
 
-    // set the ESTOP flag
+    // Set the emergency stop flag in the system
     RLHT_curr.eStop = true;
     SLICE_DEBUG_PRINTLN("ESTOP PRESSED!");
   }
-  else // when ESTOP state is LOW i.e. normal operation
+  else
   {
-    led = CRGB::Black;
+    // If the button/switch is released, restore or handle recovery
+    led = CRGB::Green;
     FastLED.show();
 
-    // reassign old states
-    RLHT_prev.heatSetpoint_1 = RLHT_prev.heatSetpoint_1;
-    RLHT_prev.heatSetpoint_2 = RLHT_prev.heatSetpoint_2;
-    RLHT_prev.rOnTime_1 = RLHT_prev.rOnTime_1;
-    RLHT_prev.rOnTime_2 = RLHT_prev.rOnTime_2;
-
-    // clear the ESTOP flag
+    // Optionally restore previous settings or require a manual reset
     RLHT_curr.eStop = false;
     SLICE_DEBUG_PRINTLN("ESTOP RELEASED!");
   }
@@ -500,6 +515,8 @@ void printSerialOutput()
     SLICE_PRINT(RLHT_curr.heatSetpoint_1);
     SLICE_PRINT(F(",onTime1:"));
     SLICE_PRINT((int)RLHT_curr.rOnTime_1);
+    SLICE_PRINT(F(", rPeriod1:"));
+    SLICE_PRINT(RLHT_curr.rPeriod_1);
 
     SLICE_PRINT(F(", PID2:"));
     SLICE_PRINT(RLHT_curr.Kp_2);
@@ -513,7 +530,15 @@ void printSerialOutput()
     SLICE_PRINT(F(", Setpoint2:"));
     SLICE_PRINT(RLHT_curr.heatSetpoint_2);
     SLICE_PRINT(F(", onTime2:"));
-    SLICE_PRINTLN((int)RLHT_curr.rOnTime_2);
+    SLICE_PRINT((int)RLHT_curr.rOnTime_2);
+    SLICE_PRINT(F(", rPeriod2:"));
+    SLICE_PRINT(RLHT_curr.rPeriod_2);
+    SLICE_PRINT(F(", Thermo Select Relay 1:"));
+    SLICE_PRINT(RLHT_curr.thermoSelect[0]);
+    SLICE_PRINT(F(", Thermo Select Relay 2:"));
+    SLICE_PRINT(RLHT_curr.thermoSelect[1]);
+    SLICE_PRINT(F(", ESTOP:"));
+    SLICE_PRINTLN(RLHT_curr.eStop);
 
     timing.lastSerialPrint = millis();
   }
