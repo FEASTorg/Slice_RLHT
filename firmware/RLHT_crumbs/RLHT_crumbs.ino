@@ -107,6 +107,18 @@ CRUMBS crumbsSlice(false, I2C_ADR); // Slave mode, I2C address 0x08
 
 void setup()
 {
+  // the general slice setup
+  setupSlice();
+
+  // the RLHT specific setup
+  setupRLHT();
+
+  // small delay before entering loop
+  delay(1000);
+}
+
+void setupSlice()
+{
   // initialize serial communication
   Serial.begin(115200);
 
@@ -122,7 +134,10 @@ void setup()
   // initialize the estop
   pinMode(ESTOP, INPUT);
   attachInterrupt(digitalPinToInterrupt(ESTOP), estopISR, CHANGE);
+}
 
+void setupRLHT()
+{
   // initialize the relay pins
   pinMode(RELAY1, OUTPUT);
   pinMode(RELAY2, OUTPUT);
@@ -138,9 +153,6 @@ void setup()
   // initialize the relay start times
   timing.relay1Start = millis();
   timing.relay2Start = millis();
-
-  // small delay before entering loop
-  delay(1000);
 }
 
 void loop()
@@ -152,70 +164,11 @@ void loop()
   // read the thermocouples
   measureThermocouples();
 
-  // handle serial commands
-  // handleSerialInput();
+  // main control logic
+  relayControlLogic();
 
   // print output to serial
   printSerialOutput();
-
-  if (!RLHT_curr.eStop && currentMode == CONTROL)
-  {
-    // ensure the PID is on
-    relay1PID.SetMode(AUTOMATIC);
-    relay2PID.SetMode(AUTOMATIC);
-
-    // set the PID tunings
-    relay1PID.SetTunings(RLHT_curr.Kp_1, RLHT_curr.Ki_1, RLHT_curr.Kd_1);
-    relay2PID.SetTunings(RLHT_curr.Kp_2, RLHT_curr.Ki_2, RLHT_curr.Kd_2);
-
-    // assign thermocouple readings to relay inputs
-    switch (RLHT_curr.thermoSelect[0])
-    {
-    case 1: // thermocouple 1 to relay 1
-      RLHT_curr.relay1Input = RLHT_curr.thermo1;
-      break;
-    case 2: // thermocouple 2 to relay 1
-      RLHT_curr.relay1Input = RLHT_curr.thermo2;
-      break;
-    }
-    if (isnan(RLHT_curr.relay1Input))
-      RLHT_curr.rOnTime_1 = 0;
-    else
-      relay1PID.Compute();
-
-    switch (RLHT_curr.thermoSelect[1])
-    {
-    case 1: // thermocouple 1 to relay 2
-      RLHT_curr.relay2Input = RLHT_curr.thermo1;
-      break;
-    case 2: // thermocouple 2 to relay 2
-      RLHT_curr.relay2Input = RLHT_curr.thermo2;
-      break;
-    }
-    if (isnan(RLHT_curr.relay2Input))
-      RLHT_curr.rOnTime_2 = 0;
-    else
-      relay2PID.Compute();
-
-    // actuate the relays
-    actuateRelays();
-  }
-  else if (!RLHT_curr.eStop && currentMode == WRITE)
-  {
-    // ensure the PID is off
-    relay1PID.SetMode(MANUAL);
-    relay2PID.SetMode(MANUAL);
-
-    // actuate the relays
-    actuateRelays();
-  }
-  else
-  {
-    // turn off the relays
-    digitalWrite(RELAY1, LOW);
-    digitalWrite(RELAY2, LOW);
-    SLICE_DEBUG_PRINTLN(F("ERROR, UNKNOWN STATE!"));
-  }
 }
 
 void pollEStop()
@@ -456,6 +409,69 @@ void measureThermocouples()
     RLHT_curr.thermo1 = thermocouple1.readCelsius();
     RLHT_curr.thermo2 = thermocouple2.readCelsius();
     timing.lastThermoRead = millis();
+  }
+}
+
+void relayControlLogic()
+{
+
+  if (!RLHT_curr.eStop && currentMode == CONTROL)
+  {
+    // ensure the PID is on
+    relay1PID.SetMode(AUTOMATIC);
+    relay2PID.SetMode(AUTOMATIC);
+
+    // set the PID tunings
+    relay1PID.SetTunings(RLHT_curr.Kp_1, RLHT_curr.Ki_1, RLHT_curr.Kd_1);
+    relay2PID.SetTunings(RLHT_curr.Kp_2, RLHT_curr.Ki_2, RLHT_curr.Kd_2);
+
+    // assign thermocouple readings to relay inputs
+    switch (RLHT_curr.thermoSelect[0])
+    {
+    case 1: // thermocouple 1 to relay 1
+      RLHT_curr.relay1Input = RLHT_curr.thermo1;
+      break;
+    case 2: // thermocouple 2 to relay 1
+      RLHT_curr.relay1Input = RLHT_curr.thermo2;
+      break;
+    }
+    if (isnan(RLHT_curr.relay1Input))
+      RLHT_curr.rOnTime_1 = 0;
+    else
+      relay1PID.Compute();
+
+    switch (RLHT_curr.thermoSelect[1])
+    {
+    case 1: // thermocouple 1 to relay 2
+      RLHT_curr.relay2Input = RLHT_curr.thermo1;
+      break;
+    case 2: // thermocouple 2 to relay 2
+      RLHT_curr.relay2Input = RLHT_curr.thermo2;
+      break;
+    }
+    if (isnan(RLHT_curr.relay2Input))
+      RLHT_curr.rOnTime_2 = 0;
+    else
+      relay2PID.Compute();
+
+    // actuate the relays
+    actuateRelays();
+  }
+  else if (!RLHT_curr.eStop && currentMode == WRITE)
+  {
+    // ensure the PID is off
+    relay1PID.SetMode(MANUAL);
+    relay2PID.SetMode(MANUAL);
+
+    // actuate the relays
+    actuateRelays();
+  }
+  else
+  {
+    // turn off the relays
+    digitalWrite(RELAY1, LOW);
+    digitalWrite(RELAY2, LOW);
+    SLICE_DEBUG_PRINTLN(F("ERROR, UNKNOWN STATE!"));
   }
 }
 
