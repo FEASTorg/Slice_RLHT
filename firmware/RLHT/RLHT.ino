@@ -1,7 +1,16 @@
-#include <Wire.h>
-#include "max6675.h"
-#include <FastLED.h>
+/**
+ * @file RLHT.ino
+ * @brief RLHT firmware for the BREAD system.
+ * @author Cameron K. Brooks 2025
+ *
+ */
+
+// RLHT specific libraries
 #include <PID_v1.h>
+#include "max6675.h"
+
+// shared BREAD libs
+#include <FastLED.h>
 
 // BREAD specific libs
 #include <CRUMBS.h>
@@ -50,29 +59,35 @@
 #define SLICE_DEBUG_PRINTLN(...)
 #endif
 
-struct RelayHeaters
+// CRUMBS start
+CRUMBS crumbsSlice(false, I2C_ADR); // Slave mode, I2C address 0x08
+
+// flag for emergency stop
+volatile bool estopTriggered = false;
+
+// create object for the LED
+CRGB led;
+
+struct RelayHeater
 {
-  double heatSetpoint_1 = 0; // set desired temperature for heater 1 (if using relay as heater actuator)
-  double relay1Input;        // input to relay 1 taken from selected thermocouple
-  double rOnTime_1;          // time relay is on in ms (0-period)
-  int rPeriod_1 = 2000;      // duration of relay 1 cycle in ms (1000ms = 1s)
-  double Kp_1 = 0;           // PID proportional gain for heater 1
-  double Ki_1 = 0;           // PID integral gain for heater 1
-  double Kd_1 = 0;           // PID derivative gain for heater 1
-  double heatSetpoint_2 = 0;
-  double relay2Input;
-  double rOnTime_2;
-  int rPeriod_2 = 2000;
-  double Kp_2 = 0;
-  double Ki_2 = 0;
-  double Kd_2 = 0;
-  double thermo1; // thermocouple 1 measurement
-  double thermo2;
-  char thermoSelect[2] = {1, 2}; // select which thermocouples pair with relays {relay1, relay2}
-  bool eStop = false;            // emergency stop flag
+  double setpointTemperature = 0; // set desired temperature for heater 1 (if using relay as heater actuator)
+  int thermocoupleSelect = 0;     // select which thermocouple to use for the relay
+  double inputTemperature = 0;    // input to relay 1 taken from selected thermocouple
+  double relayOnTime = 0;         // time relay is on in ms (0-period)
+  int relayPeriod = 1000;         // duration of relay 1 cycle in ms (1000ms = 1s)
+  double Kp = 1;                  // PID proportional gain for heater 1
+  double Ki = 0;                  // PID integral gain for heater 1
+  double Kd = 0;                  // PID derivative gain for heater 1
 };
 
-RelayHeaters RLHT_curr, RLHT_prev;
+struct RLHT_SLICE
+{
+  double temperature1;      // thermocouple 1 measurement
+  double temperature2;      // thermocouple 2 measurement
+  RelayHeater relayHeater1; // relay heater 1
+  RelayHeater relayHeater2; // relay heater 2
+  bool eStop = false;       // emergency stop flag
+} slice;
 
 struct Timing
 {
@@ -82,10 +97,11 @@ struct Timing
   unsigned long relay2Start;
 } timing = {0};
 
-volatile bool estopTriggered = false;
-
-// create object for the LED
-CRGB led;
+enum Mode
+{
+  CONTROL,
+  WRITE
+} currentMode = CONTROL;
 
 // initialize the Thermocouples
 MAX6675 thermocouple1(TC_CLK, TC_CS1, TC_DATA);
@@ -93,17 +109,8 @@ MAX6675 thermocouple2(TC_CLK, TC_CS2, TC_DATA);
 
 // Specify the links and initial tuning parameters
 // PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
-PID relay1PID(&(RLHT_curr.relay1Input), &(RLHT_curr.rOnTime_1), &(RLHT_curr.heatSetpoint_1), RLHT_curr.Kp_1, RLHT_curr.Ki_1, RLHT_curr.Kd_1, DIRECT);
-PID relay2PID(&(RLHT_curr.relay2Input), &(RLHT_curr.rOnTime_2), &(RLHT_curr.heatSetpoint_2), RLHT_curr.Kp_2, RLHT_curr.Ki_2, RLHT_curr.Kd_2, DIRECT);
-
-enum Mode
-{
-  CONTROL,
-  WRITE
-} currentMode = CONTROL;
-
-// CRUMBS start
-CRUMBS crumbsSlice(false, I2C_ADR); // Slave mode, I2C address 0x08
+PID relay1PID(&(slice.relayHeater1.inputTemperature), &(slice.relayHeater1.relayOnTime), &(slice.relayHeater1.setpointTemperature), slice.relayHeater1.Kp, slice.relayHeater1.Ki, slice.relayHeater1.Kd, DIRECT);
+PID relay2PID(&(slice.relayHeater2.inputTemperature), &(slice.relayHeater2.relayOnTime), &(slice.relayHeater2.setpointTemperature), slice.relayHeater2.Kp, slice.relayHeater2.Ki, slice.relayHeater2.Kd, DIRECT);
 
 void setup()
 {
@@ -143,8 +150,8 @@ void setupRLHT()
   pinMode(RELAY2, OUTPUT);
 
   // tell the PID to range between 0 and the full window size
-  relay1PID.SetOutputLimits(0, RLHT_curr.rPeriod_1);
-  relay2PID.SetOutputLimits(0, RLHT_curr.rPeriod_2);
+  relay1PID.SetOutputLimits(0, slice.relayHeater1.relayPeriod);
+  relay2PID.SetOutputLimits(0, slice.relayHeater2.relayPeriod);
 
   // turn the PID on
   relay1PID.SetMode(AUTOMATIC);
@@ -200,15 +207,15 @@ void processEStop()
   if (digitalRead(ESTOP) == HIGH)
   {
     // Disable PID and turn off relays safely
-    RLHT_curr.heatSetpoint_1 = 0;
-    RLHT_curr.heatSetpoint_2 = 0;
-    RLHT_curr.rOnTime_1 = 0;
-    RLHT_curr.rOnTime_2 = 0;
+    slice.relayHeater1.setpointTemperature = 0;
+    slice.relayHeater2.setpointTemperature = 0;
+    slice.relayHeater1.relayOnTime = 0;
+    slice.relayHeater2.relayOnTime = 0;
     digitalWrite(RELAY1, LOW);
     digitalWrite(RELAY2, LOW);
 
     // Set the emergency stop flag in the system
-    RLHT_curr.eStop = true;
+    slice.eStop = true;
     SLICE_DEBUG_PRINTLN("ESTOP PRESSED!");
   }
   else
@@ -218,7 +225,7 @@ void processEStop()
     FastLED.show();
 
     // Optionally restore previous settings or require a manual reset
-    RLHT_curr.eStop = false;
+    slice.eStop = false;
     SLICE_DEBUG_PRINTLN("ESTOP RELEASED!");
   }
 }
@@ -273,54 +280,54 @@ void handleMessage(CRUMBSMessage &message)
 
   case 2:
     // CommandType 2: Change Setpoint Command
-    RLHT_curr.heatSetpoint_1 = message.data[0]; // Set desired temperature for heater 1
-    RLHT_curr.heatSetpoint_2 = message.data[1]; // Set desired temperature for heater 2
+    slice.relayHeater1.setpointTemperature = message.data[0]; // Set desired temperature for heater 1
+    slice.relayHeater2.setpointTemperature = message.data[1]; // Set desired temperature for heater 2
     SLICE_DEBUG_PRINT(F("Slice: Setpoint Change Command Received. Setpoint1: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.heatSetpoint_1);
+    SLICE_DEBUG_PRINT(slice.relayHeater1.setpointTemperature);
     SLICE_DEBUG_PRINT(F(", Setpoint2: "));
-    SLICE_DEBUG_PRINTLN(RLHT_curr.heatSetpoint_2);
+    SLICE_DEBUG_PRINTLN(slice.relayHeater2.setpointTemperature);
     break;
 
   case 3:
     // CommandType 3: Change PID Tuning Command
-    RLHT_curr.Kp_1 = message.data[0]; // Set PID proportional gain for heater 1
-    RLHT_curr.Ki_1 = message.data[1]; // Set PID integral gain for heater 1
-    RLHT_curr.Kd_1 = message.data[2]; // Set PID derivative gain for heater 1
-    RLHT_curr.Kp_2 = message.data[3]; // Set PID proportional gain for heater 2
-    RLHT_curr.Ki_2 = message.data[4]; // Set PID integral gain for heater 2
-    RLHT_curr.Kd_2 = message.data[5]; // Set PID derivative gain for heater 2
+    slice.relayHeater1.Kp = message.data[0]; // Set PID proportional gain for heater 1
+    slice.relayHeater1.Ki = message.data[1]; // Set PID integral gain for heater 1
+    slice.relayHeater1.Kd = message.data[2]; // Set PID derivative gain for heater 1
+    slice.relayHeater2.Kp = message.data[3]; // Set PID proportional gain for heater 2
+    slice.relayHeater2.Ki = message.data[4]; // Set PID integral gain for heater 2
+    slice.relayHeater2.Kd = message.data[5]; // Set PID derivative gain for heater 2
     SLICE_DEBUG_PRINT(F("Slice: PID Tuning Change Command Received. Kp1: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.Kp_1);
+    SLICE_DEBUG_PRINT(slice.relayHeater1.Kp);
     SLICE_DEBUG_PRINT(F(", Ki1: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.Ki_1);
+    SLICE_DEBUG_PRINT(slice.relayHeater1.Ki);
     SLICE_DEBUG_PRINT(F(", Kd1: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.Kd_1);
+    SLICE_DEBUG_PRINT(slice.relayHeater1.Kd);
     SLICE_DEBUG_PRINT(F(", Kp2: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.Kp_2);
+    SLICE_DEBUG_PRINT(slice.relayHeater2.Kp);
     SLICE_DEBUG_PRINT(F(", Ki2: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.Ki_2);
+    SLICE_DEBUG_PRINT(slice.relayHeater2.Ki);
     SLICE_DEBUG_PRINT(F(", Kd2: "));
-    SLICE_DEBUG_PRINTLN(RLHT_curr.Kd_2);
+    SLICE_DEBUG_PRINTLN(slice.relayHeater2.Kd);
     break;
 
   case 4:
     // CommandType 4: Change Relay Period Command
-    RLHT_curr.rPeriod_1 = message.data[0]; // Set duration of relay 1 cycle in ms
-    RLHT_curr.rPeriod_2 = message.data[1]; // Set duration of relay 2 cycle in ms
+    slice.relayHeater1.relayPeriod = message.data[0]; // Set duration of relay 1 cycle in ms
+    slice.relayHeater2.relayPeriod = message.data[1]; // Set duration of relay 2 cycle in ms
     SLICE_DEBUG_PRINT(F("Slice: Relay Period Change Command Received. Period1: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.rPeriod_1);
+    SLICE_DEBUG_PRINT(slice.relayHeater1.relayPeriod);
     SLICE_DEBUG_PRINT(F(", Period2: "));
-    SLICE_DEBUG_PRINTLN(RLHT_curr.rPeriod_2);
+    SLICE_DEBUG_PRINTLN(slice.relayHeater2.relayPeriod);
     break;
 
   case 5:
     // CommandType 5: Change Thermocouple Select Command
-    RLHT_curr.thermoSelect[0] = message.data[0]; // Select which thermocouple pairs with relay 1
-    RLHT_curr.thermoSelect[1] = message.data[1]; // Select which thermocouple pairs with relay 2
+    slice.relayHeater1.thermocoupleSelect = message.data[0]; // Select which thermocouple pairs with relay 1
+    slice.relayHeater2.thermocoupleSelect = message.data[1]; // Select which thermocouple pairs with relay 2
     SLICE_DEBUG_PRINT(F("Slice: Thermocouple Select Command Received. ThermoSelect1: "));
-    SLICE_DEBUG_PRINT(RLHT_curr.thermoSelect[0]);
+    SLICE_DEBUG_PRINT(slice.relayHeater1.thermocoupleSelect);
     SLICE_DEBUG_PRINT(F(", ThermoSelect2: "));
-    SLICE_DEBUG_PRINTLN(RLHT_curr.thermoSelect[1]);
+    SLICE_DEBUG_PRINTLN(slice.relayHeater2.thermocoupleSelect);
     break;
 
   case 6:
@@ -341,10 +348,10 @@ void handleMessage(CRUMBSMessage &message)
       int newOnTime2 = (int)input2;
 
       // scale from 0 to 100 to 0 to rPeriod
-      newOnTime1 = map(newOnTime1, 0, 100, 0, RLHT_curr.rPeriod_1);
-      newOnTime2 = map(newOnTime2, 0, 100, 0, RLHT_curr.rPeriod_2);
-      RLHT_curr.rOnTime_1 = newOnTime1;
-      RLHT_curr.rOnTime_2 = newOnTime2;
+      newOnTime1 = map(newOnTime1, 0, 100, 0, slice.relayHeater1.relayPeriod);
+      newOnTime2 = map(newOnTime2, 0, 100, 0, slice.relayHeater2.relayPeriod);
+      slice.relayHeater1.relayOnTime = newOnTime1;
+      slice.relayHeater2.relayOnTime = newOnTime2;
       SLICE_DEBUG_PRINT(F("Slice: Relay 1 input updated to: "));
       SLICE_DEBUG_PRINT(input1);
       SLICE_DEBUG_PRINT(F(", Relay 2 input updated to: "));
@@ -379,12 +386,12 @@ void handleRequest()
   responseMessage.commandType = 0; /**< CommandType 0 for status response */
 
   // Populate data fields with example data
-  responseMessage.data[0] = 42.0f; /**< Example data0 */
-  responseMessage.data[1] = 1.0f;  /**< Example data1 */
-  responseMessage.data[2] = 2.0f;  /**< Example data2 */
-  responseMessage.data[3] = 3.0f;  /**< Example data3 */
-  responseMessage.data[4] = 4.0f;  /**< Example data4 */
-  responseMessage.data[5] = 5.0f;  /**< Example data5 */
+  responseMessage.data[0] = slice.temperature1;                     /**< Thermocouple 1 temperature */
+  responseMessage.data[1] = slice.temperature2;                     /**< Thermocouple 2 temperature */
+  responseMessage.data[2] = slice.relayHeater1.setpointTemperature; /**< Heater 1 setpoint */
+  responseMessage.data[3] = slice.relayHeater2.setpointTemperature; /**< Heater 2 setpoint */
+  responseMessage.data[4] = slice.relayHeater1.relayOnTime;         /**< Relay 1 on time */
+  responseMessage.data[5] = slice.relayHeater2.relayOnTime;         /**< Relay 2 on time */
 
   responseMessage.errorFlags = 0; /**< No errors */
 
@@ -406,8 +413,8 @@ void measureThermocouples()
 {
   if (millis() - timing.lastThermoRead >= THERMO_UPDATE_TIME_MS)
   {
-    RLHT_curr.thermo1 = thermocouple1.readCelsius();
-    RLHT_curr.thermo2 = thermocouple2.readCelsius();
+    slice.temperature1 = thermocouple1.readCelsius();
+    slice.temperature2 = thermocouple2.readCelsius();
     timing.lastThermoRead = millis();
   }
 }
@@ -415,49 +422,49 @@ void measureThermocouples()
 void relayControlLogic()
 {
 
-  if (!RLHT_curr.eStop && currentMode == CONTROL)
+  if (!slice.eStop && currentMode == CONTROL)
   {
     // ensure the PID is on
     relay1PID.SetMode(AUTOMATIC);
     relay2PID.SetMode(AUTOMATIC);
 
     // set the PID tunings
-    relay1PID.SetTunings(RLHT_curr.Kp_1, RLHT_curr.Ki_1, RLHT_curr.Kd_1);
-    relay2PID.SetTunings(RLHT_curr.Kp_2, RLHT_curr.Ki_2, RLHT_curr.Kd_2);
+    relay1PID.SetTunings(slice.relayHeater1.Kp, slice.relayHeater1.Ki, slice.relayHeater1.Kd);
+    relay2PID.SetTunings(slice.relayHeater2.Kp, slice.relayHeater2.Ki, slice.relayHeater2.Kd);
 
     // assign thermocouple readings to relay inputs
-    switch (RLHT_curr.thermoSelect[0])
+    switch (slice.relayHeater1.thermocoupleSelect)
     {
     case 1: // thermocouple 1 to relay 1
-      RLHT_curr.relay1Input = RLHT_curr.thermo1;
+      slice.relayHeater1.inputTemperature = slice.temperature1;
       break;
     case 2: // thermocouple 2 to relay 1
-      RLHT_curr.relay1Input = RLHT_curr.thermo2;
+      slice.relayHeater1.inputTemperature = slice.temperature2;
       break;
     }
-    if (isnan(RLHT_curr.relay1Input))
-      RLHT_curr.rOnTime_1 = 0;
+    if (isnan(slice.relayHeater1.inputTemperature))
+      slice.relayHeater1.relayOnTime = 0;
     else
       relay1PID.Compute();
 
-    switch (RLHT_curr.thermoSelect[1])
+    switch (slice.relayHeater2.thermocoupleSelect)
     {
     case 1: // thermocouple 1 to relay 2
-      RLHT_curr.relay2Input = RLHT_curr.thermo1;
+      slice.relayHeater2.inputTemperature = slice.temperature1;
       break;
     case 2: // thermocouple 2 to relay 2
-      RLHT_curr.relay2Input = RLHT_curr.thermo2;
+      slice.relayHeater2.inputTemperature = slice.temperature2;
       break;
     }
-    if (isnan(RLHT_curr.relay2Input))
-      RLHT_curr.rOnTime_2 = 0;
+    if (isnan(slice.relayHeater2.inputTemperature))
+      slice.relayHeater2.relayOnTime = 0;
     else
       relay2PID.Compute();
 
     // actuate the relays
     actuateRelays();
   }
-  else if (!RLHT_curr.eStop && currentMode == WRITE)
+  else if (!slice.eStop && currentMode == WRITE)
   {
     // ensure the PID is off
     relay1PID.SetMode(MANUAL);
@@ -479,27 +486,27 @@ void actuateRelays()
 {
 
   // turn off relays if setpoint is zero
-  if (RLHT_curr.heatSetpoint_1 == 0 && currentMode == CONTROL)
-    RLHT_curr.rOnTime_1 = 0;
-  if (RLHT_curr.heatSetpoint_2 == 0 && currentMode == CONTROL)
-    RLHT_curr.rOnTime_2 = 0;
+  if (slice.relayHeater1.setpointTemperature == 0 && currentMode == CONTROL)
+    slice.relayHeater1.relayOnTime = 0;
+  if (slice.relayHeater2.setpointTemperature == 0 && currentMode == CONTROL)
+    slice.relayHeater2.relayOnTime = 0;
 
   // Relay 1
-  if (millis() - timing.relay1Start > RLHT_curr.rPeriod_1)
+  if (millis() - timing.relay1Start > slice.relayHeater1.relayPeriod)
   { // time to shift the Relay Window
-    timing.relay1Start += RLHT_curr.rPeriod_1;
+    timing.relay1Start += slice.relayHeater1.relayPeriod;
   }
-  if ((int)(RLHT_curr.rOnTime_1) > millis() - timing.relay1Start)
+  if ((int)(slice.relayHeater1.relayOnTime) > millis() - timing.relay1Start)
     digitalWrite(RELAY1, HIGH);
   else
     digitalWrite(RELAY1, LOW);
 
   // Relay 2
-  if (millis() - timing.relay2Start > RLHT_curr.rPeriod_2)
+  if (millis() - timing.relay2Start > slice.relayHeater2.relayPeriod)
   { // time to shift the Relay Window
-    timing.relay2Start += RLHT_curr.rPeriod_2;
+    timing.relay2Start += slice.relayHeater2.relayPeriod;
   }
-  if ((int)(RLHT_curr.rOnTime_2) > millis() - timing.relay2Start)
+  if ((int)(slice.relayHeater2.relayOnTime) > millis() - timing.relay2Start)
     digitalWrite(RELAY2, HIGH);
   else
     digitalWrite(RELAY2, LOW);
@@ -512,47 +519,47 @@ void printSerialOutput()
     SLICE_PRINT(F("Mode: "));
     SLICE_PRINT(currentMode == CONTROL ? "CONTROL" : "WRITE");
     SLICE_PRINT(F(", T1:"));
-    SLICE_PRINT(RLHT_curr.thermo1);
+    SLICE_PRINT(slice.temperature1);
     SLICE_PRINT(F(", T2:"));
-    SLICE_PRINT(RLHT_curr.thermo2);
+    SLICE_PRINT(slice.temperature2);
 
     SLICE_PRINT(F(", PID1:"));
-    SLICE_PRINT(RLHT_curr.Kp_1);
+    SLICE_PRINT(slice.relayHeater1.Kp);
     SLICE_PRINT(F(","));
-    SLICE_PRINT(RLHT_curr.Ki_1);
+    SLICE_PRINT(slice.relayHeater1.Ki);
     SLICE_PRINT(F(","));
-    SLICE_PRINT(RLHT_curr.Kd_1);
+    SLICE_PRINT(slice.relayHeater1.Kd);
 
     SLICE_PRINT(F(", Relay1Input:"));
-    SLICE_PRINT(RLHT_curr.relay1Input);
+    SLICE_PRINT(slice.relayHeater1.inputTemperature);
     SLICE_PRINT(F(", Setpoint1:"));
-    SLICE_PRINT(RLHT_curr.heatSetpoint_1);
+    SLICE_PRINT(slice.relayHeater1.setpointTemperature);
     SLICE_PRINT(F(",onTime1:"));
-    SLICE_PRINT((int)RLHT_curr.rOnTime_1);
+    SLICE_PRINT((int)slice.relayHeater1.relayOnTime);
     SLICE_PRINT(F(", rPeriod1:"));
-    SLICE_PRINT(RLHT_curr.rPeriod_1);
+    SLICE_PRINT(slice.relayHeater1.relayPeriod);
 
     SLICE_PRINT(F(", PID2:"));
-    SLICE_PRINT(RLHT_curr.Kp_2);
+    SLICE_PRINT(slice.relayHeater2.Kp);
     SLICE_PRINT(F(","));
-    SLICE_PRINT(RLHT_curr.Ki_2);
+    SLICE_PRINT(slice.relayHeater2.Ki);
     SLICE_PRINT(F(","));
-    SLICE_PRINT(RLHT_curr.Kd_2);
+    SLICE_PRINT(slice.relayHeater2.Kd);
 
     SLICE_PRINT(F(", Relay2Input:"));
-    SLICE_PRINT(RLHT_curr.relay2Input);
+    SLICE_PRINT(slice.relayHeater2.inputTemperature);
     SLICE_PRINT(F(", Setpoint2:"));
-    SLICE_PRINT(RLHT_curr.heatSetpoint_2);
+    SLICE_PRINT(slice.relayHeater2.setpointTemperature);
     SLICE_PRINT(F(", onTime2:"));
-    SLICE_PRINT((int)RLHT_curr.rOnTime_2);
+    SLICE_PRINT((int)slice.relayHeater2.relayOnTime);
     SLICE_PRINT(F(", rPeriod2:"));
-    SLICE_PRINT(RLHT_curr.rPeriod_2);
+    SLICE_PRINT(slice.relayHeater2.relayPeriod);
     SLICE_PRINT(F(", Thermo Select Relay 1:"));
-    SLICE_PRINT(RLHT_curr.thermoSelect[0]);
+    SLICE_PRINT(slice.relayHeater1.thermocoupleSelect);
     SLICE_PRINT(F(", Thermo Select Relay 2:"));
-    SLICE_PRINT(RLHT_curr.thermoSelect[1]);
+    SLICE_PRINT(slice.relayHeater2.thermocoupleSelect);
     SLICE_PRINT(F(", ESTOP:"));
-    SLICE_PRINTLN(RLHT_curr.eStop);
+    SLICE_PRINTLN(slice.eStop);
 
     timing.lastSerialPrint = millis();
   }
