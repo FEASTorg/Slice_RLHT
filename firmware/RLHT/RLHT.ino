@@ -15,7 +15,7 @@
 // BREAD specific libs
 #include <CRUMBS.h>
 
-// internal libs
+// sketch specific libs
 #include "config_hardware.h" // hardware configuration containing pin definitions
 #include "config.h"          // configuration file for constants such as i2c address and timing
 
