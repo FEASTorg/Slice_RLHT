@@ -263,52 +263,38 @@ void relayControlLogic()
       relay2PID.Compute();
 
     // actuate the relays
-    actuateRelays();
+    actuateRelay(RELAY1, timing.relay1Start, slice.relayHeater1.relayPeriod, slice.relayHeater1.relayOnTime);
+    actuateRelay(RELAY2, timing.relay2Start, slice.relayHeater2.relayPeriod, slice.relayHeater2.relayOnTime);
   }
   else if (!slice.eStop && currentMode == OPEN_LOOP)
   {
-    // ensure the PID is off
+    // ensure the PID controller is turned off
     relay1PID.SetMode(MANUAL);
     relay2PID.SetMode(MANUAL);
 
     // actuate the relays
-    actuateRelays();
+    actuateRelay(RELAY1, timing.relay1Start, slice.relayHeater1.relayPeriod, slice.relayHeater1.relayOnTime);
+    actuateRelay(RELAY2, timing.relay2Start, slice.relayHeater2.relayPeriod, slice.relayHeater2.relayOnTime);
   }
   else
   {
     // turn off the relays
     digitalWrite(RELAY1, LOW);
     digitalWrite(RELAY2, LOW);
-    SLICE_DEBUG_PRINTLN(F("ERROR, UNKNOWN STATE!"));
+    SLICE_DEBUG_PRINTLN(F("ERROR INVALID MODE, ENTERED UNKNOWN STATE!"));
   }
 }
 
-void actuateRelays()
+void actuateRelay(uint8_t relayPin, unsigned long &relayStart, unsigned long relayPeriod, unsigned long relayOnTime)
 {
+  unsigned long currentTime = millis();
 
-  // turn off relays if setpoint is zero
-  if (slice.relayHeater1.setpointTemperature == 0 && currentMode == CLOSED_LOOP)
-    slice.relayHeater1.relayOnTime = 0;
-  if (slice.relayHeater2.setpointTemperature == 0 && currentMode == CLOSED_LOOP)
-    slice.relayHeater2.relayOnTime = 0;
-
-  // Relay 1
-  if (millis() - timing.relay1Start > slice.relayHeater1.relayPeriod)
-  { // time to shift the Relay Window
-    timing.relay1Start += slice.relayHeater1.relayPeriod;
+  // Shift relay window if period has elapsed
+  if (currentTime - relayStart > relayPeriod)
+  {
+    relayStart += relayPeriod;
   }
-  if ((int)(slice.relayHeater1.relayOnTime) > millis() - timing.relay1Start)
-    digitalWrite(RELAY1, HIGH);
-  else
-    digitalWrite(RELAY1, LOW);
 
-  // Relay 2
-  if (millis() - timing.relay2Start > slice.relayHeater2.relayPeriod)
-  { // time to shift the Relay Window
-    timing.relay2Start += slice.relayHeater2.relayPeriod;
-  }
-  if ((int)(slice.relayHeater2.relayOnTime) > millis() - timing.relay2Start)
-    digitalWrite(RELAY2, HIGH);
-  else
-    digitalWrite(RELAY2, LOW);
+  // Set relay state based on ON duration
+  digitalWrite(relayPin, (currentTime - relayStart) < relayOnTime ? HIGH : LOW);
 }
