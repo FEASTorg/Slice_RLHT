@@ -1,4 +1,4 @@
-# RLHT Firmware Docs
+# RLHT R2.2 Firmware Docs
 
 Notes on the firmware for relay heater slice.
 
