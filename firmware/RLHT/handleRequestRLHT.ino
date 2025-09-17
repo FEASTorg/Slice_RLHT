@@ -11,8 +11,8 @@ void handleRequest()
 
     // Prepare response message
     CRUMBSMessage responseMessage;
-    responseMessage.typeID = 1;      /**< SLICE type ID */
-    responseMessage.commandType = 0; /**< CommandType 0 for status response */
+    responseMessage.typeID = TYPE_ID; /**< SLICE type ID */
+    responseMessage.commandType = 0;  /**< CommandType 0 for status response */
 
     // Populate data fields with example data
     responseMessage.data[0] = slice.temperature1;                     /**< Thermocouple 1 temperature */
@@ -37,4 +37,3 @@ void handleRequest()
     Wire.write(buffer, encodedSize);
     SLICE_DEBUG_PRINTLN(F("Slice: Response message sent."));
 }
-
