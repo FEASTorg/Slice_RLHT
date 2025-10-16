@@ -134,6 +134,9 @@ void loop()
   // main control logic
   relayControlLogic();
 
+  // serial commands input
+  serialCommands();
+
   // print output to serial
   printSerialOutput();
 }
