@@ -1,0 +1,212 @@
+#include <Arduino.h>
+#include <math.h>
+
+#include <crumbs.h>
+#include <crumbs_message_helpers.h>
+
+#include <rlht_ops.h>
+
+#include "config.h"
+#include "globals.h"
+
+static int16_t temp_to_deci_c(double t)
+{
+    if (isnan(t))
+        return INT16_MIN;
+
+    long scaled = lround(t * 10.0);
+    if (scaled > 32767)
+        scaled = 32767;
+    if (scaled < -32768)
+        scaled = -32768;
+    return (int16_t)scaled;
+}
+
+static double deci_c_to_temp(int16_t t)
+{
+    return ((double)t) / 10.0;
+}
+
+static int clamp_period(int p)
+{
+    if (p < 100)
+        return 100;
+    if (p > 10000)
+        return 10000;
+    return p;
+}
+
+void handler_set_mode(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
+{
+    uint8_t mode = RLHT_MODE_CLOSED_LOOP;
+    (void)ctx;
+    (void)opcode;
+    (void)user_data;
+
+    if (crumbs_msg_read_u8(data, data_len, 0, &mode) != 0)
+        return;
+
+    if (mode == RLHT_MODE_CLOSED_LOOP)
+        slice.mode = CLOSED_LOOP;
+    else if (mode == RLHT_MODE_OPEN_LOOP)
+        slice.mode = OPEN_LOOP;
+}
+
+void handler_set_setpoints(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
+{
+    int16_t sp1_deci = 0;
+    int16_t sp2_deci = 0;
+    (void)ctx;
+    (void)opcode;
+    (void)user_data;
+
+    if (crumbs_msg_read_i16(data, data_len, 0, &sp1_deci) != 0)
+        return;
+    if (crumbs_msg_read_i16(data, data_len, 2, &sp2_deci) != 0)
+        return;
+
+    slice.relayHeater1.setpointTemperature = deci_c_to_temp(sp1_deci);
+    slice.relayHeater2.setpointTemperature = deci_c_to_temp(sp2_deci);
+}
+
+void handler_set_pid(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
+{
+    uint8_t kp1_x10 = 0;
+    uint8_t ki1_x10 = 0;
+    uint8_t kd1_x10 = 0;
+    uint8_t kp2_x10 = 0;
+    uint8_t ki2_x10 = 0;
+    uint8_t kd2_x10 = 0;
+    (void)ctx;
+    (void)opcode;
+    (void)user_data;
+
+    if (crumbs_msg_read_u8(data, data_len, 0, &kp1_x10) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 1, &ki1_x10) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 2, &kd1_x10) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 3, &kp2_x10) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 4, &ki2_x10) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 5, &kd2_x10) != 0)
+        return;
+
+    slice.relayHeater1.Kp = ((double)kp1_x10) / 10.0;
+    slice.relayHeater1.Ki = ((double)ki1_x10) / 10.0;
+    slice.relayHeater1.Kd = ((double)kd1_x10) / 10.0;
+    slice.relayHeater2.Kp = ((double)kp2_x10) / 10.0;
+    slice.relayHeater2.Ki = ((double)ki2_x10) / 10.0;
+    slice.relayHeater2.Kd = ((double)kd2_x10) / 10.0;
+}
+
+void handler_set_periods(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
+{
+    uint16_t p1 = 1000;
+    uint16_t p2 = 1000;
+    (void)ctx;
+    (void)opcode;
+    (void)user_data;
+
+    if (crumbs_msg_read_u16(data, data_len, 0, &p1) != 0)
+        return;
+    if (crumbs_msg_read_u16(data, data_len, 2, &p2) != 0)
+        return;
+
+    slice.relayHeater1.relayPeriod = clamp_period((int)p1);
+    slice.relayHeater2.relayPeriod = clamp_period((int)p2);
+
+    relay1PID.SetOutputLimits(0, slice.relayHeater1.relayPeriod);
+    relay2PID.SetOutputLimits(0, slice.relayHeater2.relayPeriod);
+}
+
+void handler_set_tc_select(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
+{
+    uint8_t tc1 = 0;
+    uint8_t tc2 = 0;
+    (void)ctx;
+    (void)opcode;
+    (void)user_data;
+
+    if (crumbs_msg_read_u8(data, data_len, 0, &tc1) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 1, &tc2) != 0)
+        return;
+
+    if (tc1 == 1 || tc1 == 2)
+        slice.relayHeater1.thermocoupleSelect = tc1;
+    if (tc2 == 1 || tc2 == 2)
+        slice.relayHeater2.thermocoupleSelect = tc2;
+}
+
+void handler_set_open_duty(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
+{
+    uint8_t d1 = 0;
+    uint8_t d2 = 0;
+    (void)ctx;
+    (void)opcode;
+    (void)user_data;
+
+    if (crumbs_msg_read_u8(data, data_len, 0, &d1) != 0)
+        return;
+    if (crumbs_msg_read_u8(data, data_len, 1, &d2) != 0)
+        return;
+
+    if (slice.mode != OPEN_LOOP)
+        return;
+
+    if (d1 > 100)
+        d1 = 100;
+    if (d2 > 100)
+        d2 = 100;
+
+    slice.relayHeater1.relayOnTime = map(d1, 0, 100, 0, slice.relayHeater1.relayPeriod);
+    slice.relayHeater2.relayOnTime = map(d2, 0, 100, 0, slice.relayHeater2.relayPeriod);
+}
+
+void reply_version(crumbs_context_t *ctx, crumbs_message_t *reply, void *user_data)
+{
+    (void)ctx;
+    (void)user_data;
+    crumbs_build_version_reply(reply, RLHT_TYPE_ID, RLHT_MODULE_VER_MAJOR, RLHT_MODULE_VER_MINOR, RLHT_MODULE_VER_PATCH);
+}
+
+void reply_get_state(crumbs_context_t *ctx, crumbs_message_t *reply, void *user_data)
+{
+    uint8_t flags = 0;
+    uint8_t tc_pack = 0;
+    uint16_t on1 = 0;
+    uint16_t on2 = 0;
+    (void)ctx;
+    (void)user_data;
+
+    if (slice.eStop)
+        flags |= 0x01;
+    if (slice.relay1State)
+        flags |= 0x02;
+    if (slice.relay2State)
+        flags |= 0x04;
+
+    if (slice.relayHeater1.relayOnTime > 0)
+        on1 = (uint16_t)slice.relayHeater1.relayOnTime;
+    if (slice.relayHeater2.relayOnTime > 0)
+        on2 = (uint16_t)slice.relayHeater2.relayOnTime;
+
+    tc_pack = (slice.relayHeater1.thermocoupleSelect & 0x03);
+    tc_pack |= (uint8_t)((slice.relayHeater2.thermocoupleSelect & 0x03) << 2);
+
+    crumbs_msg_init(reply, RLHT_TYPE_ID, RLHT_OP_GET_STATE);
+    crumbs_msg_add_u8(reply, (uint8_t)slice.mode);
+    crumbs_msg_add_u8(reply, flags);
+    crumbs_msg_add_i16(reply, temp_to_deci_c(slice.temperature1));
+    crumbs_msg_add_i16(reply, temp_to_deci_c(slice.temperature2));
+    crumbs_msg_add_i16(reply, temp_to_deci_c(slice.relayHeater1.setpointTemperature));
+    crumbs_msg_add_i16(reply, temp_to_deci_c(slice.relayHeater2.setpointTemperature));
+    crumbs_msg_add_u16(reply, on1);
+    crumbs_msg_add_u16(reply, on2);
+    crumbs_msg_add_u16(reply, (uint16_t)slice.relayHeater1.relayPeriod);
+    crumbs_msg_add_u16(reply, (uint16_t)slice.relayHeater2.relayPeriod);
+    crumbs_msg_add_u8(reply, tc_pack);
+}
