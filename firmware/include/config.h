@@ -1,8 +1,18 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// Define the I2C address for this SLICE device
+#ifndef RLHT_HW_GEN
+#define RLHT_HW_GEN 2
+#endif
+
+#if (RLHT_HW_GEN == 1)
 #define I2C_ADR 10
+#elif (RLHT_HW_GEN == 2)
+#define I2C_ADR 10
+#else
+#error "Unsupported RLHT_HW_GEN value"
+#endif
+
 #define TYPE_ID 1 // SLICE type ID for RLHT
 
 #define VERSION "1.0.0" // firmware version, update when making changes

@@ -82,16 +82,23 @@ void setupSlice()
     if (rc != 0)
         SLICE_DEBUG_PRINTLN(F("CRUMBS: Failed to register RLHT_OP_GET_STATE reply handler"));
 
+#if RLHT_HAS_STATUS_LED
     FastLED.addLeds<NEOPIXEL, LED_PIN>(&led, 1);
     FastLED.setBrightness(50);
     led = CRGB::Blue;
     FastLED.show();
+#endif
 
     pinMode(ESTOP, INPUT);
     attachInterrupt(digitalPinToInterrupt(ESTOP), estopISR, CHANGE);
 
     SLICE_DEBUG_PRINTLN(F("RLHT SLICE INITIALIZED"));
     SLICE_DEBUG_PRINTLN(F("VERSION: " VERSION));
+#if (RLHT_HW_GEN == 1)
+    SLICE_DEBUG_PRINTLN(F("HW Profile: Gen1"));
+#else
+    SLICE_DEBUG_PRINTLN(F("HW Profile: Gen2"));
+#endif
 }
 
 void setupRLHT()
@@ -122,8 +129,10 @@ void pollEStop()
         estopTriggered = false;
     }
 
+#if RLHT_HAS_STATUS_LED
     led = slice.eStop ? CRGB::Red : CRGB::Green;
     FastLED.show();
+#endif
 }
 
 void estopISR()
