@@ -118,6 +118,11 @@ void handler_set_periods(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *d
     slice.relayHeater1.relayPeriod = clamp_period((int)p1);
     slice.relayHeater2.relayPeriod = clamp_period((int)p2);
 
+    if (slice.relayHeater1.relayOnTime > slice.relayHeater1.relayPeriod)
+        slice.relayHeater1.relayOnTime = slice.relayHeater1.relayPeriod;
+    if (slice.relayHeater2.relayOnTime > slice.relayHeater2.relayPeriod)
+        slice.relayHeater2.relayOnTime = slice.relayHeater2.relayPeriod;
+
     relay1PID.SetOutputLimits(0, slice.relayHeater1.relayPeriod);
     relay2PID.SetOutputLimits(0, slice.relayHeater2.relayPeriod);
 }
@@ -179,20 +184,32 @@ void reply_get_state(crumbs_context_t *ctx, crumbs_message_t *reply, void *user_
     uint8_t tc_pack = 0;
     uint16_t on1 = 0;
     uint16_t on2 = 0;
+    double on1d = 0.0;
+    double on2d = 0.0;
     (void)ctx;
     (void)user_data;
 
     if (slice.eStop)
-        flags |= 0x01;
+        flags |= RLHT_FLAG_ESTOP;
     if (slice.relay1State)
-        flags |= 0x02;
+        flags |= RLHT_FLAG_RELAY1_ON;
     if (slice.relay2State)
-        flags |= 0x04;
+        flags |= RLHT_FLAG_RELAY2_ON;
 
-    if (slice.relayHeater1.relayOnTime > 0)
-        on1 = (uint16_t)slice.relayHeater1.relayOnTime;
-    if (slice.relayHeater2.relayOnTime > 0)
-        on2 = (uint16_t)slice.relayHeater2.relayOnTime;
+    on1d = slice.relayHeater1.relayOnTime;
+    on2d = slice.relayHeater2.relayOnTime;
+
+    if (on1d < 0.0)
+        on1d = 0.0;
+    if (on2d < 0.0)
+        on2d = 0.0;
+    if (on1d > slice.relayHeater1.relayPeriod)
+        on1d = slice.relayHeater1.relayPeriod;
+    if (on2d > slice.relayHeater2.relayPeriod)
+        on2d = slice.relayHeater2.relayPeriod;
+
+    on1 = (uint16_t)on1d;
+    on2 = (uint16_t)on2d;
 
     tc_pack = (slice.relayHeater1.thermocoupleSelect & 0x03);
     tc_pack |= (uint8_t)((slice.relayHeater2.thermocoupleSelect & 0x03) << 2);
