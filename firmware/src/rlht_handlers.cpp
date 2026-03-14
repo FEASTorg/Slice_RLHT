@@ -227,3 +227,11 @@ void reply_get_state(crumbs_context_t *ctx, crumbs_message_t *reply, void *user_
     crumbs_msg_add_u16(reply, (uint16_t)slice.relayHeater2.relayPeriod);
     crumbs_msg_add_u8(reply, tc_pack);
 }
+
+void reply_get_caps(crumbs_context_t *ctx, crumbs_message_t *reply, void *user_data)
+{
+    (void)ctx;
+    (void)user_data;
+
+    (void)bread_caps_build_reply(reply, RLHT_TYPE_ID, RLHT_CAP_LEVEL_1, RLHT_CAP_BASELINE_FLAGS);
+}

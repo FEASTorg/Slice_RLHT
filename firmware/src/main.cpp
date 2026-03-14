@@ -82,6 +82,10 @@ void setupSlice()
     if (rc != 0)
         SLICE_DEBUG_PRINTLN(F("CRUMBS: Failed to register RLHT_OP_GET_STATE reply handler"));
 
+    rc = crumbs_register_reply_handler(&ctx, BREAD_OP_GET_CAPS, reply_get_caps, nullptr);
+    if (rc != 0)
+        SLICE_DEBUG_PRINTLN(F("CRUMBS: Failed to register BREAD_OP_GET_CAPS reply handler"));
+
 #if RLHT_HAS_STATUS_LED
     FastLED.addLeds<NEOPIXEL, LED_PIN>(&led, 1);
     FastLED.setBrightness(50);
