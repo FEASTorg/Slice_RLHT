@@ -5,14 +5,11 @@
 #define RLHT_HW_GEN 2
 #endif
 
-#if (RLHT_HW_GEN == 1)
+// Bus address is independent of hardware generation.
+// Override with a build flag: -DI2C_ADR=<addr>
+#ifndef I2C_ADR
 #define I2C_ADR 10
-#elif (RLHT_HW_GEN == 2)
-#define I2C_ADR 10
-#else
-#error "Unsupported RLHT_HW_GEN value"
 #endif
-
 
 #define VERSION "1.0.0" // firmware version, update when making changes
 
