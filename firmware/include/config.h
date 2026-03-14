@@ -13,7 +13,6 @@
 #error "Unsupported RLHT_HW_GEN value"
 #endif
 
-#define TYPE_ID 1 // SLICE type ID for RLHT
 
 #define VERSION "1.0.0" // firmware version, update when making changes
 
