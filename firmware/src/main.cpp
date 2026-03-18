@@ -11,7 +11,7 @@
 #include "config_hardware.h"
 #include "globals.h"
 
-crumbs_context_t ctx;
+static crumbs_context_t ctx;
 volatile bool estopTriggered = false;
 CRGB led;
 
