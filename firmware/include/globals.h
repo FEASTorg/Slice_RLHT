@@ -21,7 +21,7 @@ struct RelayHeater
     uint8_t thermocoupleSelect = 0;
     double inputTemperature = 0.0;
     double relayOnTime = 0.0;
-    int relayPeriod = 1000;
+    uint16_t relayPeriod = 1000;
     double Kp = 1.0;
     double Ki = 0.0;
     double Kd = 0.0;
@@ -61,6 +61,7 @@ void estopISR();
 void processEStop();
 void measureThermocouples();
 void relayControlLogic();
+void setRelayPeriod(uint8_t relayId, uint16_t periodMs);
 void actuateRelay(uint8_t relayPin, unsigned long &relayStart, unsigned long relayPeriod, unsigned long relayOnTime, bool &relayState);
 void serialCommands();
 void printSliceState(Print &out);

@@ -250,10 +250,9 @@ void serialCommands()
         int value = command.substring(9).toInt();
         if (value >= 100 && value <= 10000)
         {
-            slice.relayHeater1.relayPeriod = value;
-            relay1PID.SetOutputLimits(0, slice.relayHeater1.relayPeriod);
+            setRelayPeriod(1, (uint16_t)value);
             Serial.print(F("R1 period: "));
-            Serial.print(value);
+            Serial.print(slice.relayHeater1.relayPeriod);
             Serial.println(F("ms"));
         }
         else
@@ -266,10 +265,9 @@ void serialCommands()
         int value = command.substring(9).toInt();
         if (value >= 100 && value <= 10000)
         {
-            slice.relayHeater2.relayPeriod = value;
-            relay2PID.SetOutputLimits(0, slice.relayHeater2.relayPeriod);
+            setRelayPeriod(2, (uint16_t)value);
             Serial.print(F("R2 period: "));
-            Serial.print(value);
+            Serial.print(slice.relayHeater2.relayPeriod);
             Serial.println(F("ms"));
         }
         else

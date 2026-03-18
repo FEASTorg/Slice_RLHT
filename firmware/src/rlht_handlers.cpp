@@ -27,15 +27,6 @@ static double deci_c_to_temp(int16_t t)
     return ((double)t) / 10.0;
 }
 
-static int clamp_period(int p)
-{
-    if (p < 100)
-        return 100;
-    if (p > 10000)
-        return 10000;
-    return p;
-}
-
 void handler_set_mode(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
 {
     uint8_t mode = RLHT_MODE_CLOSED_LOOP;
@@ -115,16 +106,8 @@ void handler_set_periods(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *d
     if (crumbs_msg_read_u16(data, data_len, 2, &p2) != 0)
         return;
 
-    slice.relayHeater1.relayPeriod = clamp_period((int)p1);
-    slice.relayHeater2.relayPeriod = clamp_period((int)p2);
-
-    if (slice.relayHeater1.relayOnTime > slice.relayHeater1.relayPeriod)
-        slice.relayHeater1.relayOnTime = slice.relayHeater1.relayPeriod;
-    if (slice.relayHeater2.relayOnTime > slice.relayHeater2.relayPeriod)
-        slice.relayHeater2.relayOnTime = slice.relayHeater2.relayPeriod;
-
-    relay1PID.SetOutputLimits(0, slice.relayHeater1.relayPeriod);
-    relay2PID.SetOutputLimits(0, slice.relayHeater2.relayPeriod);
+    setRelayPeriod(1, p1);
+    setRelayPeriod(2, p2);
 }
 
 void handler_set_tc_select(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
@@ -199,14 +182,16 @@ void reply_get_state(crumbs_context_t *ctx, crumbs_message_t *reply, void *user_
     on1d = slice.relayHeater1.relayOnTime;
     on2d = slice.relayHeater2.relayOnTime;
 
+    // Defensive clamp for reply serialization only. Runtime invariants should
+    // keep values in-range via PID output limits and command validation.
     if (on1d < 0.0)
         on1d = 0.0;
     if (on2d < 0.0)
         on2d = 0.0;
-    if (on1d > slice.relayHeater1.relayPeriod)
-        on1d = slice.relayHeater1.relayPeriod;
-    if (on2d > slice.relayHeater2.relayPeriod)
-        on2d = slice.relayHeater2.relayPeriod;
+    if (on1d > (double)slice.relayHeater1.relayPeriod)
+        on1d = (double)slice.relayHeater1.relayPeriod;
+    if (on2d > (double)slice.relayHeater2.relayPeriod)
+        on2d = (double)slice.relayHeater2.relayPeriod;
 
     on1 = (uint16_t)on1d;
     on2 = (uint16_t)on2d;

@@ -18,6 +18,24 @@ CRGB led;
 RLHT_SLICE slice;
 Timing timing = {0};
 
+static ControlMode appliedMode = CLOSED_LOOP;
+static bool pidTuningsApplied = false;
+static double lastKp1 = 0.0;
+static double lastKi1 = 0.0;
+static double lastKd1 = 0.0;
+static double lastKp2 = 0.0;
+static double lastKi2 = 0.0;
+static double lastKd2 = 0.0;
+
+static uint16_t clampRelayPeriod(uint16_t p)
+{
+    if (p < 100u)
+        return 100u;
+    if (p > 10000u)
+        return 10000u;
+    return p;
+}
+
 MAX6675 thermocouple1(TC_CLK, TC_CS1, TC_DATA);
 MAX6675 thermocouple2(TC_CLK, TC_CS2, TC_DATA);
 
@@ -25,6 +43,76 @@ PID relay1PID(&(slice.relayHeater1.inputTemperature), &(slice.relayHeater1.relay
               slice.relayHeater1.Kp, slice.relayHeater1.Ki, slice.relayHeater1.Kd, DIRECT);
 PID relay2PID(&(slice.relayHeater2.inputTemperature), &(slice.relayHeater2.relayOnTime), &(slice.relayHeater2.setpointTemperature),
               slice.relayHeater2.Kp, slice.relayHeater2.Ki, slice.relayHeater2.Kd, DIRECT);
+
+static void apply_mode_transition_if_needed()
+{
+    if (slice.mode == appliedMode)
+        return;
+
+    // PID_v1 calls Initialize() on MANUAL->AUTOMATIC transitions.
+    // Apply mode only on transitions to avoid repeated integral re-seeding.
+    if (slice.mode == CLOSED_LOOP)
+    {
+        relay1PID.SetMode(AUTOMATIC);
+        relay2PID.SetMode(AUTOMATIC);
+        appliedMode = CLOSED_LOOP;
+        return;
+    }
+
+    if (slice.mode == OPEN_LOOP)
+    {
+        relay1PID.SetMode(MANUAL);
+        relay2PID.SetMode(MANUAL);
+        appliedMode = OPEN_LOOP;
+    }
+}
+
+static void apply_tunings_if_needed()
+{
+    bool changed = !pidTuningsApplied ||
+                   slice.relayHeater1.Kp != lastKp1 ||
+                   slice.relayHeater1.Ki != lastKi1 ||
+                   slice.relayHeater1.Kd != lastKd1 ||
+                   slice.relayHeater2.Kp != lastKp2 ||
+                   slice.relayHeater2.Ki != lastKi2 ||
+                   slice.relayHeater2.Kd != lastKd2;
+
+    if (!changed)
+        return;
+
+    relay1PID.SetTunings(slice.relayHeater1.Kp, slice.relayHeater1.Ki, slice.relayHeater1.Kd);
+    relay2PID.SetTunings(slice.relayHeater2.Kp, slice.relayHeater2.Ki, slice.relayHeater2.Kd);
+
+    lastKp1 = slice.relayHeater1.Kp;
+    lastKi1 = slice.relayHeater1.Ki;
+    lastKd1 = slice.relayHeater1.Kd;
+    lastKp2 = slice.relayHeater2.Kp;
+    lastKi2 = slice.relayHeater2.Ki;
+    lastKd2 = slice.relayHeater2.Kd;
+    pidTuningsApplied = true;
+}
+
+void setRelayPeriod(uint8_t relayId, uint16_t periodMs)
+{
+    uint16_t p = clampRelayPeriod(periodMs);
+
+    if (relayId == 1)
+    {
+        slice.relayHeater1.relayPeriod = p;
+        if (slice.relayHeater1.relayOnTime > (double)p)
+            slice.relayHeater1.relayOnTime = (double)p;
+        relay1PID.SetOutputLimits(0, p);
+        return;
+    }
+
+    if (relayId == 2)
+    {
+        slice.relayHeater2.relayPeriod = p;
+        if (slice.relayHeater2.relayOnTime > (double)p)
+            slice.relayHeater2.relayOnTime = (double)p;
+        relay2PID.SetOutputLimits(0, p);
+    }
+}
 
 void setup()
 {
@@ -113,11 +201,18 @@ void setupRLHT()
     digitalWrite(RELAY1, LOW);
     digitalWrite(RELAY2, LOW);
 
-    relay1PID.SetOutputLimits(0, slice.relayHeater1.relayPeriod);
-    relay2PID.SetOutputLimits(0, slice.relayHeater2.relayPeriod);
+    // Deterministic default mapping: Relay1->TC1, Relay2->TC2.
+    // Controllers may override this later via RLHT_OP_SET_TC_SELECT.
+    slice.relayHeater1.thermocoupleSelect = 1;
+    slice.relayHeater2.thermocoupleSelect = 2;
+
+    setRelayPeriod(1, slice.relayHeater1.relayPeriod);
+    setRelayPeriod(2, slice.relayHeater2.relayPeriod);
 
     relay1PID.SetMode(AUTOMATIC);
     relay2PID.SetMode(AUTOMATIC);
+    appliedMode = CLOSED_LOOP;
+    apply_tunings_if_needed();
 
     timing.lastThermoRead = millis();
     timing.lastSerialPrint = millis();
@@ -190,14 +285,11 @@ void relayControlLogic()
         return;
     }
 
+    apply_mode_transition_if_needed();
+    apply_tunings_if_needed();
+
     if (slice.mode == CLOSED_LOOP)
     {
-        relay1PID.SetMode(AUTOMATIC);
-        relay2PID.SetMode(AUTOMATIC);
-
-        relay1PID.SetTunings(slice.relayHeater1.Kp, slice.relayHeater1.Ki, slice.relayHeater1.Kd);
-        relay2PID.SetTunings(slice.relayHeater2.Kp, slice.relayHeater2.Ki, slice.relayHeater2.Kd);
-
         switch (slice.relayHeater1.thermocoupleSelect)
         {
         case 1:
@@ -234,8 +326,7 @@ void relayControlLogic()
     }
     else if (slice.mode == OPEN_LOOP)
     {
-        relay1PID.SetMode(MANUAL);
-        relay2PID.SetMode(MANUAL);
+        // Mode transition already handled above.
     }
     else
     {
@@ -246,16 +337,6 @@ void relayControlLogic()
         SLICE_DEBUG_PRINTLN(F("ERROR INVALID MODE, ENTERED UNKNOWN STATE!"));
         return;
     }
-
-    if (slice.relayHeater1.relayOnTime < 0)
-        slice.relayHeater1.relayOnTime = 0;
-    if (slice.relayHeater2.relayOnTime < 0)
-        slice.relayHeater2.relayOnTime = 0;
-
-    if (slice.relayHeater1.relayOnTime > slice.relayHeater1.relayPeriod)
-        slice.relayHeater1.relayOnTime = slice.relayHeater1.relayPeriod;
-    if (slice.relayHeater2.relayOnTime > slice.relayHeater2.relayPeriod)
-        slice.relayHeater2.relayOnTime = slice.relayHeater2.relayPeriod;
 
     actuateRelay(RELAY1, timing.relay1Start, (unsigned long)slice.relayHeater1.relayPeriod, (unsigned long)slice.relayHeater1.relayOnTime, slice.relay1State);
     actuateRelay(RELAY2, timing.relay2Start, (unsigned long)slice.relayHeater2.relayPeriod, (unsigned long)slice.relayHeater2.relayOnTime, slice.relay2State);
