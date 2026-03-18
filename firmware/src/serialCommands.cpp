@@ -1,6 +1,20 @@
 #include <Arduino.h>
+#include <avr/pgmspace.h>
 
 #include "globals.h"
+
+static bool starts_with_p(const String &s, PGM_P prefix)
+{
+    size_t n = strlen_P(prefix);
+    if (s.length() < (int)n)
+        return false;
+    return strncmp_P(s.c_str(), prefix, n) == 0;
+}
+
+static bool equals_p(const String &s, PGM_P token)
+{
+    return strcmp_P(s.c_str(), token) == 0;
+}
 
 void serialCommands()
 {
@@ -10,16 +24,16 @@ void serialCommands()
     String command = Serial.readStringUntil('\n');
     command.trim();
 
-    if (command.startsWith(F("MODE=")))
+    if (starts_with_p(command, PSTR("MODE=")))
     {
         String mode = command.substring(5);
         mode.toUpperCase();
-        if (mode.equals(F("CLOSED_LOOP")) || mode.equals(F("0")))
+        if (equals_p(mode, PSTR("CLOSED_LOOP")) || equals_p(mode, PSTR("0")))
         {
             slice.mode = CLOSED_LOOP;
             Serial.println(F("Mode set to CLOSED_LOOP"));
         }
-        else if (mode.equals(F("OPEN_LOOP")) || mode.equals(F("1")))
+        else if (equals_p(mode, PSTR("OPEN_LOOP")) || equals_p(mode, PSTR("1")))
         {
             slice.mode = OPEN_LOOP;
             Serial.println(F("Mode set to OPEN_LOOP"));
@@ -29,7 +43,7 @@ void serialCommands()
             Serial.println(F("Invalid mode. Use CLOSED_LOOP/0 or OPEN_LOOP/1"));
         }
     }
-    else if (command.startsWith(F("R1TEMP=")))
+    else if (starts_with_p(command, PSTR("R1TEMP=")))
     {
         if (slice.mode == CLOSED_LOOP)
         {
@@ -50,7 +64,7 @@ void serialCommands()
             Serial.println(F("R1 temp only in CLOSED_LOOP"));
         }
     }
-    else if (command.startsWith(F("R2TEMP=")))
+    else if (starts_with_p(command, PSTR("R2TEMP=")))
     {
         if (slice.mode == CLOSED_LOOP)
         {
@@ -71,7 +85,7 @@ void serialCommands()
             Serial.println(F("R2 temp only in CLOSED_LOOP"));
         }
     }
-    else if (command.startsWith(F("R1TIME=")))
+    else if (starts_with_p(command, PSTR("R1TIME=")))
     {
         if (slice.mode == OPEN_LOOP)
         {
@@ -95,7 +109,7 @@ void serialCommands()
             Serial.println(F("R1 time only in OPEN_LOOP"));
         }
     }
-    else if (command.startsWith(F("R2TIME=")))
+    else if (starts_with_p(command, PSTR("R2TIME=")))
     {
         if (slice.mode == OPEN_LOOP)
         {
@@ -119,7 +133,7 @@ void serialCommands()
             Serial.println(F("R2 time only in OPEN_LOOP"));
         }
     }
-    else if (command.startsWith(F("R1TC=")))
+    else if (starts_with_p(command, PSTR("R1TC=")))
     {
         int value = command.substring(5).toInt();
         if (value == 1 || value == 2)
@@ -133,7 +147,7 @@ void serialCommands()
             Serial.println(F("TC select 1 or 2"));
         }
     }
-    else if (command.startsWith(F("R2TC=")))
+    else if (starts_with_p(command, PSTR("R2TC=")))
     {
         int value = command.substring(5).toInt();
         if (value == 1 || value == 2)
@@ -147,7 +161,7 @@ void serialCommands()
             Serial.println(F("TC select 1 or 2"));
         }
     }
-    else if (command.startsWith(F("R1KP=")))
+    else if (starts_with_p(command, PSTR("R1KP=")))
     {
         double value = command.substring(5).toFloat();
         if (value >= 0)
@@ -161,7 +175,7 @@ void serialCommands()
             Serial.println(F("Kp must be >= 0"));
         }
     }
-    else if (command.startsWith(F("R1KI=")))
+    else if (starts_with_p(command, PSTR("R1KI=")))
     {
         double value = command.substring(5).toFloat();
         if (value >= 0)
@@ -175,7 +189,7 @@ void serialCommands()
             Serial.println(F("Ki must be >= 0"));
         }
     }
-    else if (command.startsWith(F("R1KD=")))
+    else if (starts_with_p(command, PSTR("R1KD=")))
     {
         double value = command.substring(5).toFloat();
         if (value >= 0)
@@ -189,7 +203,7 @@ void serialCommands()
             Serial.println(F("Kd must be >= 0"));
         }
     }
-    else if (command.startsWith(F("R2KP=")))
+    else if (starts_with_p(command, PSTR("R2KP=")))
     {
         double value = command.substring(5).toFloat();
         if (value >= 0)
@@ -203,7 +217,7 @@ void serialCommands()
             Serial.println(F("Kp must be >= 0"));
         }
     }
-    else if (command.startsWith(F("R2KI=")))
+    else if (starts_with_p(command, PSTR("R2KI=")))
     {
         double value = command.substring(5).toFloat();
         if (value >= 0)
@@ -217,7 +231,7 @@ void serialCommands()
             Serial.println(F("Ki must be >= 0"));
         }
     }
-    else if (command.startsWith(F("R2KD=")))
+    else if (starts_with_p(command, PSTR("R2KD=")))
     {
         double value = command.substring(5).toFloat();
         if (value >= 0)
@@ -231,7 +245,7 @@ void serialCommands()
             Serial.println(F("Kd must be >= 0"));
         }
     }
-    else if (command.startsWith(F("R1PERIOD=")))
+    else if (starts_with_p(command, PSTR("R1PERIOD=")))
     {
         int value = command.substring(9).toInt();
         if (value >= 100 && value <= 10000)
@@ -247,7 +261,7 @@ void serialCommands()
             Serial.println(F("Period range 100-10000ms"));
         }
     }
-    else if (command.startsWith(F("R2PERIOD=")))
+    else if (starts_with_p(command, PSTR("R2PERIOD=")))
     {
         int value = command.substring(9).toInt();
         if (value >= 100 && value <= 10000)
@@ -263,7 +277,7 @@ void serialCommands()
             Serial.println(F("Period range 100-10000ms"));
         }
     }
-    else if (command.startsWith(F("HELP")) || command.startsWith(F("?")))
+    else if (starts_with_p(command, PSTR("HELP")) || starts_with_p(command, PSTR("?")))
     {
         Serial.println(F("Commands:"));
         Serial.println(F("MODE=CLOSED_LOOP/OPEN_LOOP"));
