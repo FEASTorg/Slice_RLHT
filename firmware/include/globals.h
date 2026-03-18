@@ -63,6 +63,7 @@ void measureThermocouples();
 void relayControlLogic();
 void actuateRelay(uint8_t relayPin, unsigned long &relayStart, unsigned long relayPeriod, unsigned long relayOnTime, bool &relayState);
 void serialCommands();
+void printSliceState(Print &out);
 void printSerialOutput();
 
 void handler_set_mode(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data);

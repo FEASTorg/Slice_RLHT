@@ -1,54 +1,61 @@
 #include "globals.h"
 #include "config.h"
 
+void printSliceState(Print &out)
+{
+    out.print(F("ControlMode: "));
+    out.print(slice.mode == CLOSED_LOOP ? F("CLOSED_LOOP") : F("OPEN_LOOP"));
+    out.print(F(", T1:"));
+    out.print(slice.temperature1);
+    out.print(F(", T2:"));
+    out.print(slice.temperature2);
+
+    out.print(F(", PID1:"));
+    out.print(slice.relayHeater1.Kp);
+    out.print(F(","));
+    out.print(slice.relayHeater1.Ki);
+    out.print(F(","));
+    out.print(slice.relayHeater1.Kd);
+
+    out.print(F(", Relay1Input:"));
+    out.print(slice.relayHeater1.inputTemperature);
+    out.print(F(", Setpoint1:"));
+    out.print(slice.relayHeater1.setpointTemperature);
+    out.print(F(", onTime1:"));
+    out.print((int)slice.relayHeater1.relayOnTime);
+    out.print(F(", rPeriod1:"));
+    out.print(slice.relayHeater1.relayPeriod);
+
+    out.print(F(", PID2:"));
+    out.print(slice.relayHeater2.Kp);
+    out.print(F(","));
+    out.print(slice.relayHeater2.Ki);
+    out.print(F(","));
+    out.print(slice.relayHeater2.Kd);
+
+    out.print(F(", Relay2Input:"));
+    out.print(slice.relayHeater2.inputTemperature);
+    out.print(F(", Setpoint2:"));
+    out.print(slice.relayHeater2.setpointTemperature);
+    out.print(F(", onTime2:"));
+    out.print((int)slice.relayHeater2.relayOnTime);
+    out.print(F(", rPeriod2:"));
+    out.print(slice.relayHeater2.relayPeriod);
+    out.print(F(", Thermo Select Relay 1:"));
+    out.print(slice.relayHeater1.thermocoupleSelect);
+    out.print(F(", Thermo Select Relay 2:"));
+    out.print(slice.relayHeater2.thermocoupleSelect);
+    out.print(F(", ESTOP:"));
+    out.println(slice.eStop);
+}
+
 void printSerialOutput()
 {
     if (millis() - timing.lastSerialPrint >= SERIAL_UPDATE_TIME_MS)
     {
-        SLICE_DEBUG_PRINT(F("ControlMode: "));
-        SLICE_DEBUG_PRINT(slice.mode == CLOSED_LOOP ? F("CLOSED_LOOP") : F("OPEN_LOOP"));
-        SLICE_DEBUG_PRINT(F(", T1:"));
-        SLICE_DEBUG_PRINT(slice.temperature1);
-        SLICE_DEBUG_PRINT(F(", T2:"));
-        SLICE_DEBUG_PRINT(slice.temperature2);
-
-        SLICE_DEBUG_PRINT(F(", PID1:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.Kp);
-        SLICE_DEBUG_PRINT(F(","));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.Ki);
-        SLICE_DEBUG_PRINT(F(","));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.Kd);
-
-        SLICE_DEBUG_PRINT(F(", Relay1Input:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.inputTemperature);
-        SLICE_DEBUG_PRINT(F(", Setpoint1:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.setpointTemperature);
-        SLICE_DEBUG_PRINT(F(", onTime1:"));
-        SLICE_DEBUG_PRINT((int)slice.relayHeater1.relayOnTime);
-        SLICE_DEBUG_PRINT(F(", rPeriod1:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.relayPeriod);
-
-        SLICE_DEBUG_PRINT(F(", PID2:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.Kp);
-        SLICE_DEBUG_PRINT(F(","));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.Ki);
-        SLICE_DEBUG_PRINT(F(","));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.Kd);
-
-        SLICE_DEBUG_PRINT(F(", Relay2Input:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.inputTemperature);
-        SLICE_DEBUG_PRINT(F(", Setpoint2:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.setpointTemperature);
-        SLICE_DEBUG_PRINT(F(", onTime2:"));
-        SLICE_DEBUG_PRINT((int)slice.relayHeater2.relayOnTime);
-        SLICE_DEBUG_PRINT(F(", rPeriod2:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.relayPeriod);
-        SLICE_DEBUG_PRINT(F(", Thermo Select Relay 1:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater1.thermocoupleSelect);
-        SLICE_DEBUG_PRINT(F(", Thermo Select Relay 2:"));
-        SLICE_DEBUG_PRINT(slice.relayHeater2.thermocoupleSelect);
-        SLICE_DEBUG_PRINT(F(", ESTOP:"));
-        SLICE_DEBUG_PRINTLN(slice.eStop);
+#ifdef SLICE_DEBUG
+        printSliceState(Serial);
+#endif
 
         timing.lastSerialPrint = millis();
     }
