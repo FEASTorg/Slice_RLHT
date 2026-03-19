@@ -242,8 +242,16 @@ void pollEStop()
     }
 
 #if RLHT_HAS_STATUS_LED
-    led = slice.eStop ? CRGB::Red : CRGB::Green;
-    FastLED.show();
+    {
+        static CRGB lastLed = CRGB::Black;
+        CRGB next = slice.eStop ? CRGB::Red : CRGB::Green;
+        if (next != lastLed)
+        {
+            led = next;
+            FastLED.show();
+            lastLed = next;
+        }
+    }
 #endif
 }
 
