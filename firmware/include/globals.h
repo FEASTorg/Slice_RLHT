@@ -6,13 +6,14 @@
 #include <crumbs.h>
 #include <PID_v1.h>
 #include <max6675.h>
+#include <bread/rlht_ops.h>
 
 #include "config_hardware.h"
 
 enum ControlMode : uint8_t
 {
-    CLOSED_LOOP = 0,
-    OPEN_LOOP = 1
+    CLOSED_LOOP = RLHT_MODE_CLOSED_LOOP,
+    OPEN_LOOP = RLHT_MODE_OPEN_LOOP
 };
 
 struct RelayHeater

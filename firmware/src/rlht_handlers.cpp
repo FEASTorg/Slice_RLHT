@@ -37,10 +37,10 @@ void handler_set_mode(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data
     if (crumbs_msg_read_u8(data, data_len, 0, &mode) != 0)
         return;
 
-    if (mode == RLHT_MODE_CLOSED_LOOP)
-        slice.mode = CLOSED_LOOP;
-    else if (mode == RLHT_MODE_OPEN_LOOP)
-        slice.mode = OPEN_LOOP;
+    if (mode != RLHT_MODE_CLOSED_LOOP && mode != RLHT_MODE_OPEN_LOOP)
+        return;
+
+    slice.mode = static_cast<ControlMode>(mode);
 }
 
 void handler_set_setpoints(crumbs_context_t *ctx, uint8_t opcode, const uint8_t *data, uint8_t data_len, void *user_data)
