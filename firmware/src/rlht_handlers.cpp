@@ -12,7 +12,7 @@
 static int16_t temp_to_deci_c(double t)
 {
     if (isnan(t))
-        return INT16_MIN;
+        return BREAD_INVALID_I16;
 
     long scaled = lround(t * 10.0);
     if (scaled > 32767)

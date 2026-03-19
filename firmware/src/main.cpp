@@ -297,7 +297,7 @@ void measureThermocouples()
     {
         slice.temperature1 = thermocouple1.readCelsius();
         slice.temperature2 = thermocouple2.readCelsius();
-        timing.lastThermoRead = millis();
+        timing.lastThermoRead += THERMO_UPDATE_TIME_MS;
     }
 }
 
