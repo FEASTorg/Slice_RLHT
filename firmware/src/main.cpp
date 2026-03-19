@@ -15,6 +15,10 @@ static crumbs_context_t ctx;
 volatile bool estopTriggered = false;
 CRGB led;
 
+static const unsigned long ESTOP_DEBOUNCE_MS = 25;
+static bool estopDebouncePending = false;
+static unsigned long estopDebounceStartMs = 0;
+
 RLHT_SLICE slice;
 Timing timing = {0};
 
@@ -181,8 +185,10 @@ void setupSlice()
     FastLED.show();
 #endif
 
-    pinMode(ESTOP, INPUT);
+    // e-stop: no external bias resistor on current boards, so use internal pull-up.
+    pinMode(ESTOP, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(ESTOP), estopISR, CHANGE);
+    estopTriggered = true; // Force initial debounced state sync after boot.
 
     SLICE_DEBUG_PRINTLN(F("RLHT SLICE INITIALIZED"));
     SLICE_DEBUG_PRINTLN(F("VERSION: " VERSION));
@@ -224,8 +230,15 @@ void pollEStop()
 {
     if (estopTriggered)
     {
-        processEStop();
         estopTriggered = false;
+        estopDebouncePending = true;
+        estopDebounceStartMs = millis();
+    }
+
+    if (estopDebouncePending && (millis() - estopDebounceStartMs >= ESTOP_DEBOUNCE_MS))
+    {
+        processEStop();
+        estopDebouncePending = false;
     }
 
 #if RLHT_HAS_STATUS_LED
@@ -241,7 +254,8 @@ void estopISR()
 
 void processEStop()
 {
-    if (digitalRead(ESTOP) == HIGH)
+    // Internal pull-up means asserted e-stop pulls the line LOW.
+    if (digitalRead(ESTOP) == LOW)
     {
         slice.relayHeater1.setpointTemperature = 0;
         slice.relayHeater2.setpointTemperature = 0;
