@@ -191,7 +191,12 @@ void setupSlice()
     estopTriggered = true; // Force initial debounced state sync after boot.
 
     SLICE_DEBUG_PRINTLN(F("RLHT SLICE INITIALIZED"));
-    SLICE_DEBUG_PRINTLN(F("VERSION: " VERSION));
+    SLICE_DEBUG_PRINT(F("VERSION: "));
+    SLICE_DEBUG_PRINT(RLHT_MODULE_VER_MAJOR);
+    SLICE_DEBUG_PRINT(F("."));
+    SLICE_DEBUG_PRINT(RLHT_MODULE_VER_MINOR);
+    SLICE_DEBUG_PRINT(F("."));
+    SLICE_DEBUG_PRINTLN(RLHT_MODULE_VER_PATCH);
 #if (RLHT_HW_GEN == 1)
     SLICE_DEBUG_PRINTLN(F("HW Profile: Gen1"));
 #else

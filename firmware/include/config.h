@@ -11,8 +11,6 @@
 #define I2C_ADR 10
 #endif
 
-#define VERSION "1.0.0" // firmware version, update when making changes
-
 #ifdef SLICE_DEBUG
 
 #define SLICE_DEBUG_PRINT(...) \
